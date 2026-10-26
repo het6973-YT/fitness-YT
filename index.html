@@ -1,0 +1,3478 @@
+<!DOCTYPE html>
+<html lang="zh-TW"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="智慧體重管理">
+  <meta name="theme-color" content="#0f172a">
+  <title>智慧體重管理 V3.6 PWA</title>
+  
+  <!-- LINE 與社群分享預覽標籤 (Open Graph) -->
+  <meta property="og:title" content="智慧體重管理 V3.6 PWA">
+  <meta property="og:description" content="專為辦公室工作者設計！支援體重、體脂率(%)、內臟脂肪、骨骼肌率(%)截圖智慧辨識，以及運動後淨熱量赤字/剩餘直條圖與 PWA 手機桌面安裝。">
+  <meta property="og:type" content="website">
+
+  <!-- 動態生成的 Apple Touch Icon 預留連結 -->
+  <link id="appleTouchIconLink" rel="apple-touch-icon" href="">
+  <link id="favIconLink" rel="icon" type="image/png" href="">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Tesseract.js (本地免費 OCR 引擎) -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #f8fafc;
+      padding-bottom: calc(85px + env(safe-area-inset-bottom));
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    input, textarea, select {
+      user-select: auto;
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.2s ease-in-out; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .cat-btn.active {
+      background-color: #059669;
+      color: #ffffff;
+      border-color: #059669;
+      box-shadow: 0 1px 3px rgba(5, 150, 105, 0.3);
+    }
+    .line-green {
+      background-color: #06C755;
+    }
+    .line-green:hover {
+      background-color: #05b34c;
+    }
+  </style>
+</head>
+<body class="text-slate-800">
+
+  <!-- 頂部狀態與日期切換列 -->
+  <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-md px-3 py-2.5">
+    <div class="max-w-md mx-auto flex items-center justify-between gap-1">
+      <div class="flex items-center space-x-1.5 min-w-0">
+        <i class="fa-solid fa-bolt text-emerald-400 text-lg shrink-0"></i>
+        <h1 class="font-bold text-sm tracking-wide truncate">智慧體重管理</h1>
+        <span class="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded font-semibold shrink-0">V3.6 PWA</span>
+      </div>
+      
+      <div class="flex items-center space-x-1.5 shrink-0">
+        <!-- 日期選擇器 -->
+        <div class="flex items-center bg-slate-800 rounded-lg px-1.5 py-1 border border-slate-700">
+          <button onclick="changeDate(-1)" class="text-slate-400 hover:text-white px-1"><i class="fa-solid fa-chevron-left text-[10px]"></i></button>
+          <input type="date" id="currentDateInput" onchange="onDateChange(this.value)" class="bg-transparent text-[11px] font-medium text-emerald-300 focus:outline-none text-center w-24">
+          <button onclick="changeDate(1)" class="text-slate-400 hover:text-white px-1"><i class="fa-solid fa-chevron-right text-[10px]"></i></button>
+        </div>
+
+        <!-- LINE 分享與手機下載按鈕 -->
+        <button onclick="openShareDownloadModal()" class="line-green text-white px-2.5 py-1.5 rounded-lg text-xs font-bold shadow flex items-center space-x-1 active:scale-95 transition-transform" title="LINE 分享與下載">
+          <i class="fa-brands fa-line text-sm"></i>
+          <span class="hidden sm:inline">分享/安裝</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- LINE 內建瀏覽器提示橫幅 -->
+  <div id="lineBrowserNotice" class="hidden bg-emerald-950 text-emerald-100 px-4 py-2.5 text-xs border-b border-emerald-800">
+    <div class="max-w-md mx-auto flex items-center justify-between gap-2">
+      <div class="flex items-center space-x-2">
+        <i class="fa-brands fa-line text-lg text-[#06C755]"></i>
+        <span>您正使用 LINE 開啟！建議點右下角「<b>...</b>」➔「<b>以預設瀏覽器開啟</b>」並點選「<b>加入主畫面</b>」即可享受完整 PWA App 體驗！</span>
+      </div>
+      <button onclick="downloadStandaloneApp()" class="shrink-0 bg-emerald-500 text-slate-950 font-bold px-2.5 py-1 rounded-lg text-[11px] shadow">
+        直接下載
+      </button>
+    </div>
+  </div>
+
+  <!-- 主內容容器 -->
+  <main class="max-w-md mx-auto px-4 pt-4 space-y-4">
+
+    <!-- ================= TAB 1: 今日總覽與雙基底評估 ================= -->
+    <section id="tab-dashboard" class="tab-content space-y-4 active">
+
+      <!-- 手機快捷操作列：LINE 分享戰報 & PWA 桌面安裝/下載保存 -->
+      <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 text-white rounded-2xl p-3.5 shadow-sm flex items-center justify-between gap-2">
+        <div class="min-w-0">
+          <div class="flex items-center space-x-1.5">
+            <span class="bg-[#06C755] text-white text-[10px] font-bold px-1.5 py-0.5 rounded">PWA 隨身版</span>
+            <h3 class="font-bold text-xs truncate">LINE 傳送門與安裝至手機桌面</h3>
+          </div>
+          <p class="text-[11px] text-slate-300 mt-0.5 truncate">一鍵複製戰報貼到 LINE，或將系統加到主畫面</p>
+        </div>
+        <div class="flex items-center space-x-1.5 shrink-0">
+          <button onclick="shareDailyReportToLine()" class="line-green text-white font-bold px-2.5 py-2 rounded-xl text-[11px] flex items-center space-x-1 shadow active:scale-95 transition-all">
+            <i class="fa-brands fa-line text-sm"></i>
+            <span>LINE分享</span>
+          </button>
+          <button onclick="openShareDownloadModal('download')" class="bg-white/15 hover:bg-white/25 text-white border border-white/20 font-bold px-2.5 py-2 rounded-xl text-[11px] flex items-center space-x-1 active:scale-95 transition-all">
+            <i class="fa-solid fa-mobile-screen text-emerald-300"></i>
+            <span>安裝/保存</span>
+          </button>
+        </div>
+      </div>
+      
+      <!-- 當日趨近/遠離目標 總評橫幅 -->
+      <div id="dailyStatusBanner" class="rounded-2xl p-4 shadow-sm border bg-slate-100 border-slate-200 text-slate-700 flex items-start space-x-3">
+        <div id="statusIcon" class="text-2xl mt-0.5"><i class="fa-solid fa-clipboard-list text-slate-400"></i></div>
+        <div class="flex-1">
+          <div class="flex items-center justify-between">
+            <h2 id="statusTitle" class="font-bold text-base">今日減重目標計畫尚未開始紀錄</h2>
+            <span id="statusBadge" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-600">待輸入</span>
+          </div>
+          <p id="statusDesc" class="text-xs mt-1 leading-relaxed opacity-90">依您的減重目標計算，今日建議攝取 1555 kcal，純蛋白質 73g、脂肪上限 48g。</p>
+        </div>
+      </div>
+
+      <!-- 基底一：能量基底 (熱量與脂肪收支 - 強化運動額外扣除對照) -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-bold text-sm text-slate-700 flex items-center">
+            <span class="w-2 h-4 bg-blue-500 rounded-sm mr-2"></span>能量基底：攝取對照與運動額外扣除
+          </h3>
+          <span id="energyBalanceTag" class="text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600">目標攝取 1555 kcal</span>
+        </div>
+
+        <!-- 顯示目前熱量與營養素計算模式說明 -->
+        <div id="calcModeNotice" class="mb-3 px-2.5 py-1.5 rounded-lg bg-blue-50/80 border border-blue-200 text-[11px] text-blue-800 flex items-center justify-between gap-2">
+          <span id="calcModeText"><i class="fa-solid fa-bullseye mr-1"></i>未達標 (80.5kg → 目標 73kg)：依減重目標與目標體重計算每日攝取</span>
+          <span id="calcModeSubTag" class="font-bold text-[10px] bg-blue-200 text-blue-900 px-1.5 py-0.5 rounded whitespace-nowrap">減重目標＋運動扣除</span>
+        </div>
+
+        <!-- 攝取熱量 vs 減重目標攝取 對照後，獨立將當日運動進行額外扣除計算 -->
+        <div class="grid grid-cols-4 gap-1.5 text-center bg-slate-50 rounded-xl p-2.5 mb-2.5 border border-slate-100">
+          <div>
+            <p class="text-[10px] text-slate-400">飲食攝取</p>
+            <p class="font-bold text-sm text-slate-800"><span id="dashCalIn">0</span> <span class="text-[9px] font-normal">kcal</span></p>
+          </div>
+          <div class="border-l border-slate-200">
+            <p class="text-[10px] text-slate-400" id="dashTargetCalLabel">減重目標攝取</p>
+            <p class="font-bold text-sm text-blue-600"><span id="dashTargetCal">1555</span> <span class="text-[9px] font-normal">kcal</span></p>
+          </div>
+          <div class="border-l border-slate-200">
+            <p class="text-[10px] text-emerald-600 font-semibold">運動額外扣除</p>
+            <p class="font-bold text-sm text-emerald-600">-<span id="dashExDeduct">0</span> <span class="text-[9px] font-normal">kcal</span></p>
+          </div>
+          <div class="border-l border-slate-200 bg-white rounded-lg py-0.5 shadow-sm">
+            <p class="text-[10px] text-indigo-600 font-semibold">運動後淨攝取</p>
+            <p class="font-bold text-sm text-indigo-700"><span id="dashNetCalAfterEx">0</span> <span class="text-[9px] font-normal">kcal</span></p>
+          </div>
+        </div>
+
+        <!-- 當日運動額外扣除對照結算說明列 -->
+        <div id="exDeductionSummaryBox" class="mb-3 px-3 py-2 rounded-xl bg-emerald-50/70 border border-emerald-200 text-[11px] text-emerald-900 flex items-center justify-between">
+          <div class="space-y-0.5">
+            <p id="exDeductLine1" class="font-semibold text-slate-700">① 飲食對照減重目標：攝取 0 - 目標 1555 = -1555 kcal</p>
+            <p id="exDeductLine2" class="font-bold text-emerald-700">② 今日尚未記錄運動（扣除 0 kcal）：若有運動將自動從攝取熱量中額外扣除！</p>
+          </div>
+          <button onclick="switchTab('tab-exercise')" class="shrink-0 ml-2 bg-white hover:bg-emerald-100 text-emerald-700 border border-emerald-300 px-2 py-1 rounded-lg text-[10px] font-bold shadow-sm">
+            <i class="fa-solid fa-person-running mr-0.5"></i>記運動
+          </button>
+        </div>
+
+        <!-- 預估當日體組織微變化 -->
+        <div class="grid grid-cols-2 gap-3 text-xs">
+          <div class="bg-amber-50/70 border border-amber-100 rounded-xl p-2.5 flex items-center justify-between">
+            <div>
+              <p class="text-amber-700 font-medium">脂肪淨收支與推估</p>
+              <p class="text-[11px] text-amber-600/80 mt-0.5">攝取 <span id="dashFatIn">0</span>g / 目標上限 <span id="dashFatLimit">48</span>g</p>
+            </div>
+            <div class="text-right">
+              <span id="dashFatDelta" class="font-bold text-sm text-emerald-600">-191.4g</span>
+              <p class="text-[10px] text-amber-600">含運動理論體脂變化</p>
+            </div>
+          </div>
+
+          <div class="bg-indigo-50/70 border border-indigo-100 rounded-xl p-2.5 flex items-center justify-between">
+            <div>
+              <p class="text-indigo-700 font-medium">肌肉量變化推估</p>
+              <p id="dashMuscleStatusText" class="text-[11px] text-indigo-600/80 mt-0.5">請先輸入今日餐點</p>
+            </div>
+            <div class="text-right">
+              <span id="dashMuscleDelta" class="font-bold text-sm text-slate-400">待紀錄</span>
+              <p class="text-[10px] text-indigo-600">預估骨骼肌趨勢</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 基底二：營養基底 (蛋白質與維生素機能保護 - 搭配目標體重計算) -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-sm text-slate-700 flex items-center">
+            <span class="w-2 h-4 bg-emerald-500 rounded-sm mr-2"></span>營養基底：依減重目標計算攝取量
+          </h3>
+          <span id="nutritionStatusBadge" class="text-[11px] font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-500">尚未輸入餐點</span>
+        </div>
+
+        <!-- 蛋白質進度條 (含實物換算提示) -->
+        <div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="font-medium text-slate-600">
+              <i class="fa-solid fa-drumstick-bite text-emerald-500 mr-1"></i>純蛋白質 (<span id="dashProFormulaLabel">辦公族標準：目標體重 73kg × 1g</span>)
+            </span>
+            <span class="font-bold text-slate-700"><span id="dashProIn">0.0</span> / <span id="dashProTarget">73</span> g</span>
+          </div>
+          <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+            <div id="barPro" class="bg-emerald-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+          <p id="proEquivalentHint" class="text-[11px] text-slate-500 mt-1 bg-emerald-50/60 px-2.5 py-1 rounded-lg border border-emerald-100/80"><i class="fa-solid fa-lightbulb text-amber-500 mr-1"></i>距目標體重需求尚差 <b>73g 純蛋白質</b></p>
+        </div>
+
+        <!-- 碳水進度條 -->
+        <div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="font-medium text-slate-600"><i class="fa-solid fa-bowl-rice text-blue-500 mr-1"></i>碳水化合物 (<span id="dashCarbFormulaLabel">依減重目標熱量分配</span>)</span>
+            <span class="font-bold text-slate-700"><span id="dashCarbIn">0.0</span> / <span id="dashCarbTarget">205</span> g</span>
+          </div>
+          <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+            <div id="barCarb" class="bg-blue-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- 維生素與微量營養素進度條 -->
+        <div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="font-medium text-slate-600"><i class="fa-solid fa-apple-whole text-purple-500 mr-1"></i>維生素/蔬果微量營養素 (代謝機能)</span>
+            <span class="font-bold text-slate-700"><span id="dashVitIn">0</span> / 100 %</span>
+          </div>
+          <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+            <div id="barVit" class="bg-purple-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 當日體組成快照與快捷跳轉 (5 格獨立呈現：體重、體脂率%、體脂重kg、內臟脂肪、骨骼肌率%) -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between mb-2.5">
+          <h3 class="font-bold text-sm text-slate-700 flex items-center">
+            <span class="w-2 h-4 bg-purple-500 rounded-sm mr-2"></span>當日量測體組成 (體脂/內臟脂肪/骨骼肌獨立呈現)
+          </h3>
+          <button onclick="switchTab('tab-body')" class="text-xs text-blue-600 font-medium flex items-center">
+            <i class="fa-solid fa-camera mr-1"></i>截圖辨識 / 修改
+          </button>
+        </div>
+        <div class="grid grid-cols-5 gap-1 text-center pt-1">
+          <div class="bg-slate-50 p-1.5 rounded-xl border border-slate-100">
+            <p class="text-[10px] text-slate-400">目前體重</p>
+            <p class="font-bold text-xs text-slate-800 mt-0.5"><span id="dashWeight">80.5</span><span class="text-[9px] font-normal">kg</span></p>
+            <p class="text-[9px] text-slate-400 mt-0.5">目標<span id="dashGoalWeightHint">73</span></p>
+          </div>
+          <div class="bg-amber-50/70 p-1.5 rounded-xl border border-amber-200/80">
+            <p class="text-[10px] text-amber-700 font-semibold">體脂率</p>
+            <p class="font-bold text-xs text-amber-600 mt-0.5"><span id="dashBodyFat">28.3</span><span class="text-[9px] font-normal">%</span></p>
+            <p class="text-[9px] text-amber-600/80 mt-0.5">目標<span id="dashGoalFatPctHint">24%</span></p>
+          </div>
+          <div class="bg-amber-50/40 p-1.5 rounded-xl border border-amber-100">
+            <p class="text-[10px] text-amber-800 font-semibold">體脂重</p>
+            <p class="font-bold text-xs text-amber-700 mt-0.5"><span id="dashBodyFatKg">22.8</span><span class="text-[9px] font-normal">kg</span></p>
+            <p class="text-[9px] text-amber-600/80 mt-0.5">目標<span id="dashGoalFatKgHint">17.5</span></p>
+          </div>
+          <div class="bg-rose-50/60 p-1.5 rounded-xl border border-rose-200/80">
+            <p class="text-[10px] text-rose-700 font-semibold">內臟脂肪</p>
+            <p class="font-bold text-xs text-rose-600 mt-0.5"><span id="dashVisceralFat">16</span><span class="text-[9px] font-normal">級</span></p>
+            <p class="text-[9px] text-rose-600/80 mt-0.5">目標≤<span id="dashGoalVisceralHint">11</span></p>
+          </div>
+          <div class="bg-emerald-50/60 p-1.5 rounded-xl border border-emerald-200/80">
+            <p class="text-[10px] text-emerald-700 font-semibold">骨骼肌率</p>
+            <p class="font-bold text-xs text-emerald-600 mt-0.5"><span id="dashMusclePct">30.9</span><span class="text-[9px] font-normal">%</span></p>
+            <p class="text-[9px] text-emerald-700 font-medium mt-0.5"><span id="dashMuscleKg">24.9</span>kg</p>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= TAB 2: 餐點與宏量營養素紀錄 ================= -->
+    <section id="tab-food" class="tab-content space-y-4">
+      
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-sm text-slate-700 flex items-center">
+            <i class="fa-solid fa-utensils text-emerald-500 mr-2"></i>新增餐點與營養素
+          </h3>
+          <button type="button" onclick="toggleCustomFoodForm()" class="text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-lg font-bold shadow-sm flex items-center space-x-1 active:scale-95 transition-all">
+            <i class="fa-solid fa-folder-plus"></i>
+            <span>＋自訂新食物入庫</span>
+          </button>
+        </div>
+
+        <!-- 展開式：自訂新食物永久加入清單表單 -->
+        <div id="customFoodCreatorBox" class="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3 space-y-2.5 hidden">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold text-emerald-900 flex items-center">
+              <i class="fa-solid fa-sparkles text-emerald-600 mr-1.5"></i>建立新食物並加入「常用食物清單」
+            </h4>
+            <button type="button" onclick="toggleCustomFoodForm()" class="text-slate-400 hover:text-slate-600 text-xs">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+          <p class="text-[11px] text-emerald-700 leading-relaxed">
+            在此輸入的項目會永久保存在您的手機食物庫中，未來可隨時從分類選單直接點選帶入！
+          </p>
+          <div class="grid grid-cols-3 gap-2">
+            <div class="col-span-1">
+              <label class="text-[10px] text-emerald-800 font-semibold block mb-1">歸屬分類</label>
+              <select id="newFoodCat" class="w-full bg-white border border-emerald-300 rounded-lg px-2 py-1.5 text-xs font-medium">
+                <option value="主食類">🍚 主食類</option>
+                <option value="肉類">🥩 肉類</option>
+                <option value="奶蛋類">🥛 奶蛋類</option>
+                <option value="蔬菜類">🥬 蔬菜類</option>
+                <option value="水果類">🍎 水果類</option>
+                <option value="自訂類">⭐ 自訂類</option>
+              </select>
+            </div>
+            <div class="col-span-2">
+              <label class="text-[10px] text-emerald-800 font-semibold block mb-1">新食物名稱與份量單位</label>
+              <input type="text" id="newFoodName" placeholder="如：超商烤雞腿便當 (1盒)" class="w-full bg-white border border-emerald-300 rounded-lg px-2.5 py-1.5 text-xs">
+            </div>
+          </div>
+          <div class="grid grid-cols-5 gap-1.5">
+            <div>
+              <label class="text-[10px] text-slate-600 block text-center">熱量(kcal)</label>
+              <input type="number" id="newFoodCal" placeholder="0" class="w-full bg-white border border-emerald-200 rounded-lg p-1 text-center text-xs font-bold">
+            </div>
+            <div>
+              <label class="text-[10px] text-emerald-700 block text-center">純蛋白(g)</label>
+              <input type="number" id="newFoodPro" placeholder="0" step="0.1" class="w-full bg-white border border-emerald-200 rounded-lg p-1 text-center text-xs font-bold">
+            </div>
+            <div>
+              <label class="text-[10px] text-amber-700 block text-center">脂肪(g)</label>
+              <input type="number" id="newFoodFat" placeholder="0" step="0.1" class="w-full bg-white border border-emerald-200 rounded-lg p-1 text-center text-xs font-bold">
+            </div>
+            <div>
+              <label class="text-[10px] text-blue-700 block text-center">碳水(g)</label>
+              <input type="number" id="newFoodCarb" placeholder="0" step="0.1" class="w-full bg-white border border-emerald-200 rounded-lg p-1 text-center text-xs font-bold">
+            </div>
+            <div>
+              <label class="text-[10px] text-purple-700 block text-center">維生素(%)</label>
+              <input type="number" id="newFoodVit" placeholder="10" value="10" class="w-full bg-white border border-emerald-200 rounded-lg p-1 text-center text-xs font-bold">
+            </div>
+          </div>
+          <div class="flex items-center justify-between pt-1 gap-2">
+            <button type="button" onclick="saveNewCustomFoodToLibrary()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg text-xs shadow-sm">
+              <i class="fa-solid fa-check mr-1"></i>儲存至食物清單並立即選用
+            </button>
+          </div>
+          <!-- 已建立的自訂食物管理小清單 -->
+          <div id="customFoodManageWrap" class="hidden pt-2 border-t border-emerald-200/80">
+            <p class="text-[10px] font-bold text-emerald-800 mb-1">已建立的自訂食物（點擊垃圾桶可從清單移除）：</p>
+            <div id="customFoodTagList" class="flex flex-wrap gap-1.5"></div>
+          </div>
+        </div>
+
+        <!-- 步驟 1：選擇六大分類按鈕列 -->
+        <div>
+          <label class="text-[11px] text-slate-500 block mb-1.5 font-medium">1. 選擇食物分類（點擊切換）</label>
+          <div class="grid grid-cols-7 gap-1 text-center">
+            <button type="button" onclick="selectFoodCategory('全部')" data-cat="全部" class="cat-btn active border border-slate-200 rounded-xl py-1.5 text-[11px] font-semibold text-slate-600 transition-all">全部</button>
+            <button type="button" onclick="selectFoodCategory('主食類')" data-cat="主食類" class="cat-btn border border-slate-200 rounded-xl py-1.5 text-[11px] font-semibold text-slate-600 transition-all">🍚主食</button>
+            <button type="button" onclick="selectFoodCategory('蔬菜類')" data-cat="蔬菜類" class="cat-btn border border-slate-200 rounded-xl py-1.5 text-[11px] font-semibold text-slate-600 transition-all">🥬蔬菜</button>
+            <button type="button" onclick="selectFoodCategory('水果類')" data-cat="水果類" class="cat-btn border border-slate-200 rounded-xl py-1.5 text-[11px] font-semibold text-slate-600 transition-all">🍎水果</button>
+            <button type="button" onclick="selectFoodCategory('肉類')" data-cat="肉類" class="cat-btn border border-slate-200 rounded-xl py-1.5 text-[11px] font-semibold text-slate-600 transition-all">🥩肉類</button>
+            <button type="button" onclick="selectFoodCategory('奶蛋類')" data-cat="奶蛋類" class="cat-btn border border-slate-200 rounded-xl py-1.5 text-[11px] font-semibold text-slate-600 transition-all">🥛奶蛋</button>
+            <button type="button" onclick="selectFoodCategory('自訂類')" data-cat="自訂類" class="cat-btn border border-slate-200 rounded-xl py-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50/40 transition-all">⭐自訂</button>
+          </div>
+        </div>
+
+        <!-- 步驟 2：餐別與搜尋/下拉選單 -->
+        <div class="grid grid-cols-3 gap-2">
+          <div class="col-span-1">
+            <label class="text-[11px] text-slate-500 block mb-1">餐別</label>
+            <select id="mealType" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs font-medium focus:outline-none focus:border-emerald-500">
+              <option value="早餐">🌅 早餐</option>
+              <option value="午餐">☀️ 午餐</option>
+              <option value="晚餐">🌙 晚餐</option>
+              <option value="運動補給">⚡ 運動補給</option>
+              <option value="點心">🍪 點心</option>
+            </select>
+          </div>
+          <div class="col-span-2">
+            <label class="text-[11px] text-slate-500 block mb-1">快速關鍵字過濾 (如: 雞胸、麵、蛋)</label>
+            <div class="relative">
+              <input type="text" id="foodSearchInput" oninput="initFoodPresetDropdown()" placeholder="輸入關鍵字篩選下方選單..." class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-7 pr-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
+              <i class="fa-solid fa-magnifying-glass text-slate-400 text-[11px] absolute left-2.5 top-2.5"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- 食物下拉選單 -->
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="text-[11px] text-slate-500 font-medium">2. 從分類清單選擇食物 (顯示為純蛋白質克數)</label>
+            <span id="foodFilterCount" class="text-[10px] text-emerald-600 font-semibold">共 121 項可選</span>
+          </div>
+          <select id="foodPresetSelect" onchange="onFoodPresetChange()" class="w-full bg-emerald-50/40 border border-emerald-300 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-600"></select>
+        </div>
+
+        <!-- 步驟 3：食物名稱與份量倍數 -->
+        <div class="grid grid-cols-3 gap-2 pt-1">
+          <div class="col-span-2">
+            <label class="text-[11px] text-slate-500 block mb-1">食物名稱 (含整份重量)</label>
+            <input type="text" id="foodName" placeholder="例如：白米飯 (1碗 200g)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500">
+          </div>
+          <div class="col-span-1">
+            <label class="text-[11px] text-slate-500 block mb-1">份量 (倍數/份)</label>
+            <input type="number" id="foodMultiplier" value="1" step="0.5" min="0.1" oninput="recalcFoodPreset()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-emerald-600 focus:outline-none focus:border-emerald-500">
+          </div>
+        </div>
+
+        <!-- 快捷份量按鈕 -->
+        <div class="flex items-center justify-end space-x-1.5 text-[11px]">
+          <span class="text-slate-400 mr-1">快捷份量：</span>
+          <button type="button" onclick="setMultiplier(0.5)" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 font-medium">0.5份</button>
+          <button type="button" onclick="setMultiplier(1)" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 font-medium">1份</button>
+          <button type="button" onclick="setMultiplier(1.5)" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 font-medium">1.5份</button>
+          <button type="button" onclick="setMultiplier(2)" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 font-medium">2份</button>
+          <button type="button" onclick="setMultiplier(3)" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 font-medium">3份</button>
+        </div>
+
+        <!-- 營養素細節 (可微調) -->
+        <div class="grid grid-cols-5 gap-1.5 pt-1">
+          <div>
+            <label class="text-[10px] text-slate-400 block text-center">熱量(kcal)</label>
+            <input type="number" id="foodCal" placeholder="0" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-center text-xs font-semibold">
+          </div>
+          <div>
+            <label class="text-[10px] text-emerald-600 block text-center">純蛋白質(g)</label>
+            <input type="number" id="foodPro" placeholder="0" step="0.1" class="w-full bg-emerald-50/50 border border-emerald-200 rounded-lg p-1.5 text-center text-xs font-semibold">
+          </div>
+          <div>
+            <label class="text-[10px] text-amber-600 block text-center">脂肪(g)</label>
+            <input type="number" id="foodFat" placeholder="0" step="0.1" class="w-full bg-amber-50/50 border border-amber-200 rounded-lg p-1.5 text-center text-xs font-semibold">
+          </div>
+          <div>
+            <label class="text-[10px] text-blue-600 block text-center">碳水(g)</label>
+            <input type="number" id="foodCarb" placeholder="0" step="0.1" class="w-full bg-blue-50/50 border border-blue-200 rounded-lg p-1.5 text-center text-xs font-semibold">
+          </div>
+          <div>
+            <label class="text-[10px] text-purple-600 block text-center">維生素(%)</label>
+            <input type="number" id="foodVit" placeholder="0" class="w-full bg-purple-50/50 border border-purple-200 rounded-lg p-1.5 text-center text-xs font-semibold">
+          </div>
+        </div>
+
+        <button onclick="addMealEntry()" class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold py-2.5 rounded-xl text-xs shadow-sm transition-all flex items-center justify-center space-x-1">
+          <i class="fa-solid fa-plus"></i><span>加入當日餐點紀錄</span>
+        </button>
+      </div>
+
+      <!-- 當日已紀錄餐點清單 -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-sm text-slate-700">今日已攝取餐點明細</h3>
+          <span id="foodListSummary" class="text-xs text-slate-400">共 0 項</span>
+        </div>
+        <div id="mealListContainer" class="space-y-2"><p class="text-xs text-slate-400 text-center py-4">今日尚無餐點紀錄</p></div>
+      </div>
+
+    </section>
+
+    <!-- ================= TAB 3: 運動與心率消耗計算 ================= -->
+    <section id="tab-exercise" class="tab-content space-y-4">
+      
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-sm text-slate-700 flex items-center">
+            <i class="fa-solid fa-person-running text-blue-500 mr-2"></i>新增運動與熱量消耗
+          </h3>
+          <button type="button" onclick="toggleCustomExerciseForm()" class="text-[11px] bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded-lg font-bold shadow-sm flex items-center space-x-1 active:scale-95 transition-all">
+            <i class="fa-solid fa-folder-plus"></i>
+            <span>＋新增常用運動項目</span>
+          </button>
+        </div>
+
+        <!-- 展開式：自訂常用運動種類加入選單表單 -->
+        <div id="customExerciseCreatorBox" class="hidden bg-blue-50/70 border border-blue-200 rounded-xl p-3 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold text-blue-900 flex items-center">
+              <i class="fa-solid fa-dumbbell text-blue-600 mr-1.5"></i>新增自訂運動種類至「常用選單」
+            </h4>
+            <button type="button" onclick="toggleCustomExerciseForm()" class="text-slate-400 hover:text-slate-600 text-xs">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+          <p class="text-[11px] text-blue-700 leading-relaxed">
+            輸入您常做的運動名稱、預設時間與消耗卡路里，儲存後即可從下方下拉選單一鍵選用並依時間自動換算熱量！
+          </p>
+          <div class="grid grid-cols-3 gap-2">
+            <div class="col-span-3">
+              <label class="text-[10px] text-blue-800 font-semibold block mb-1">運動種類名稱</label>
+              <input type="text" id="newExName" placeholder="例如：羽球雙打、游泳、超慢跑、飛輪..." class="w-full bg-white border border-blue-300 rounded-lg px-2.5 py-1.5 text-xs">
+            </div>
+            <div>
+              <label class="text-[10px] text-blue-800 font-semibold block mb-1">基準時間(分鐘)</label>
+              <input type="number" id="newExBaseMin" value="30" min="1" class="w-full bg-white border border-blue-300 rounded-lg px-2.5 py-1.5 text-xs font-bold">
+            </div>
+            <div class="col-span-2">
+              <label class="text-[10px] text-blue-800 font-semibold block mb-1">該時間消耗熱量 (kcal / 卡路里)</label>
+              <input type="number" id="newExBaseCal" placeholder="例如：250" min="1" class="w-full bg-white border border-blue-300 rounded-lg px-2.5 py-1.5 text-xs font-bold text-blue-700">
+            </div>
+          </div>
+          <button type="button" onclick="saveNewCustomExerciseToLibrary()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg text-xs shadow-sm">
+            <i class="fa-solid fa-check mr-1"></i>儲存至運動選單並立即套用
+          </button>
+          <!-- 已建立的自訂運動管理小清單 -->
+          <div id="customExManageWrap" class="hidden pt-2 border-t border-blue-200/80">
+            <p class="text-[10px] font-bold text-blue-800 mb-1">已建立的自訂運動（點擊垃圾桶可移除）：</p>
+            <div id="customExTagList" class="flex flex-wrap gap-1.5"></div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div class="col-span-2">
+            <label class="text-[11px] text-slate-500 block mb-1">1. 從選單選擇運動種類（或選「自訂輸入」）</label>
+            <select id="exType" onchange="onExerciseSelectChange()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-blue-500"></select>
+          </div>
+          <div class="col-span-2">
+            <label class="text-[11px] text-slate-500 block mb-1">2. 運動名稱（可直接自行修改或輸入新運動種類）</label>
+            <input type="text" id="exCustomNameInput" placeholder="例如：居家超慢跑、打籃球、爬樓梯..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="text-[11px] text-slate-500 block mb-1">運動時間 (分鐘)</label>
+            <input type="number" id="exDuration" value="45" min="1" oninput="calculateExercisePreview()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700">
+          </div>
+          <div>
+            <label class="text-[11px] text-slate-500 block mb-1">平均心率 (bpm，選填)</label>
+            <input type="number" id="exHeartRate" placeholder="如: 138 (自動精算)" oninput="calculateExercisePreview()" class="w-full bg-rose-50/50 border border-rose-200 rounded-xl px-3 py-2 text-xs font-bold text-rose-600 placeholder-rose-300">
+          </div>
+        </div>
+
+        <div class="bg-blue-50/50 rounded-xl p-3 flex items-center justify-between border border-blue-200/80">
+          <div>
+            <p class="text-xs font-bold text-slate-700">消耗熱量 (卡路里) <span class="text-[10px] font-normal text-blue-600">可自由手動輸入</span></p>
+            <p id="exCalcMethodText" class="text-[10px] text-slate-500 mt-0.5">依 METs (7.5) 與目標體重計算（亦可直接手改熱量）</p>
+          </div>
+          <div class="text-right flex items-center">
+            <input type="number" id="exCalories" oninput="onManualCalorieInput()" class="w-24 bg-white border-2 border-blue-300 focus:border-blue-600 rounded-lg px-2 py-1 text-right font-bold text-sm text-blue-600 focus:outline-none" value="0">
+            <span class="text-xs font-semibold text-slate-600 ml-1">kcal</span>
+          </div>
+        </div>
+
+        <button onclick="addExerciseEntry()" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold py-2.5 rounded-xl text-xs shadow-sm transition-all flex items-center justify-center space-x-1">
+          <i class="fa-solid fa-plus"></i><span>加入當日運動紀錄（自動計入額外熱量扣除）</span>
+        </button>
+      </div>
+
+      <!-- 當日運動紀錄列表 -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-sm text-slate-700">今日運動消耗明細</h3>
+          <span id="exListSummary" class="text-xs text-slate-400">共 0 分鐘</span>
+        </div>
+        <div id="exerciseListContainer" class="space-y-2"><p class="text-xs text-slate-400 text-center py-4">今日尚無運動紀錄</p></div>
+      </div>
+
+    </section>
+
+    <!-- ================= TAB 4: 截圖量測輸入與目標設定 ================= -->
+    <section id="tab-body" class="tab-content space-y-4">
+      
+      <!-- 區塊 A：手機截圖智慧辨識 -->
+      <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-4 shadow-md space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-sm flex items-center">
+            <i class="fa-solid fa-wand-magic-sparkles text-emerald-400 mr-2"></i>手機量測截圖智慧導入
+          </h3>
+          <span class="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">四大區塊精準辨識 V3.6</span>
+        </div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          上傳您的體脂計量測截圖，系統將自動針對四大區塊提取：1.<b>體重(kg)</b>、2.<b>體脂率(%)</b>、3.<b>內臟脂肪(級)</b>、4.<b>骨骼肌率(第一個數值 %)</b>。
+        </p>
+
+        <div class="flex items-center space-x-2">
+          <label class="flex-1 bg-emerald-500 hover:bg-emerald-600 active:scale-[0.99] text-slate-950 font-bold py-2.5 px-4 rounded-xl text-xs text-center cursor-pointer transition-all shadow">
+            <i class="fa-solid fa-image mr-1.5"></i>選擇或拍攝量測截圖
+            <input type="file" id="screenshotInput" accept="image/*" class="hidden" onchange="handleScreenshotUpload(event)">
+          </label>
+        </div>
+
+        <div id="ocrStatusBox" class="hidden bg-slate-950/60 rounded-xl p-3 text-xs space-y-2 border border-slate-700">
+          <div class="flex items-center justify-between">
+            <span id="ocrStatusText" class="text-emerald-300 font-medium"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>正在解析截圖數值...</span>
+          </div>
+          <p id="ocrRawPreview" class="text-[10px] text-slate-400 line-clamp-2"></p>
+        </div>
+      </div>
+
+      <!-- 區塊 B：當日體組成量測數值 -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-sm text-slate-700 flex items-center">
+            <i class="fa-solid fa-weight-scale text-purple-500 mr-2"></i>當日體組成紀錄 (<span id="bodyTabDateLabel">2026-10-26</span>)
+          </h3>
+          <span class="text-[10px] bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full font-semibold">含內臟脂肪＆比率(%)</span>
+        </div>
+
+        <div class="grid grid-cols-4 gap-2">
+          <div>
+            <label class="text-[10px] text-slate-500 block mb-1">目前體重(kg)</label>
+            <input type="number" id="inputWeight" step="0.1" placeholder="80.5" oninput="updateBodyTabLivePreview()" class="w-full bg-purple-50/40 border border-purple-200 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-purple-500">
+          </div>
+          <div>
+            <label class="text-[10px] text-amber-600 font-semibold block mb-1">體脂率(%)</label>
+            <input type="number" id="inputBodyFat" step="0.1" placeholder="28.3" oninput="updateBodyTabLivePreview()" class="w-full bg-amber-50/50 border border-amber-200 rounded-xl px-2.5 py-2 text-xs font-bold text-amber-800 focus:outline-none focus:border-amber-500">
+          </div>
+          <div>
+            <label class="text-[10px] text-rose-600 font-semibold block mb-1">內臟脂肪(級)</label>
+            <input type="number" id="inputVisceralFat" step="1" placeholder="16" oninput="updateBodyTabLivePreview()" class="w-full bg-rose-50/50 border border-rose-200 rounded-xl px-2.5 py-2 text-xs font-bold text-rose-800 focus:outline-none focus:border-rose-500">
+          </div>
+          <div>
+            <label class="text-[10px] text-emerald-600 font-semibold block mb-1">骨骼肌率(%)</label>
+            <input type="number" id="inputMuscle" step="0.1" placeholder="30.9" oninput="updateBodyTabLivePreview()" class="w-full bg-emerald-50/50 border border-emerald-200 rounded-xl px-2.5 py-2 text-xs font-bold text-emerald-800 focus:outline-none focus:border-emerald-500">
+          </div>
+        </div>
+
+        <!-- 體脂數值、內臟脂肪、骨骼肌數值 獨立呈現卡片 -->
+        <div class="grid grid-cols-3 gap-2 pt-1">
+          <div class="bg-amber-50/80 border border-amber-200 rounded-xl p-2.5">
+            <span class="text-[9px] bg-amber-500 text-white font-bold px-1.5 py-0.5 rounded">體脂單獨呈現</span>
+            <p class="text-[11px] font-bold text-amber-900 mt-1">體脂率 <span id="bodyTabFatPctDisplay">--%</span></p>
+            <p class="text-xs font-bold text-amber-700 mt-0.5">換算：<span id="bodyTabFatKgDisplay">--</span> kg</p>
+          </div>
+
+          <div class="bg-rose-50/80 border border-rose-200 rounded-xl p-2.5">
+            <span class="text-[9px] bg-rose-500 text-white font-bold px-1.5 py-0.5 rounded">內臟脂肪單獨呈現</span>
+            <p class="text-[11px] font-bold text-rose-900 mt-1">等級 <span id="bodyTabVisceralDisplay">--</span></p>
+            <p id="bodyTabVisceralStatus" class="text-[10px] font-semibold text-rose-600 mt-0.5">標準 ≤ 9 級</p>
+          </div>
+
+          <div class="bg-emerald-50/80 border border-emerald-200 rounded-xl p-2.5">
+            <span class="text-[9px] bg-emerald-600 text-white font-bold px-1.5 py-0.5 rounded">骨骼肌單獨呈現</span>
+            <p class="text-[11px] font-bold text-emerald-900 mt-1">比率 <span id="bodyTabMusclePctDisplay">--%</span></p>
+            <p class="text-xs font-bold text-emerald-700 mt-0.5">換算：<span id="bodyTabMuscleKgDisplay">--</span> kg</p>
+          </div>
+        </div>
+
+        <button onclick="saveDailyBodyMetrics()" class="w-full bg-purple-600 hover:bg-purple-700 active:scale-[0.99] text-white font-bold py-2.5 rounded-xl text-xs shadow-sm transition-all">
+          <i class="fa-solid fa-floppy-disk mr-1.5"></i>儲存當日量測並同步更新基準
+        </button>
+      </div>
+
+      <!-- 區塊 C：生理參數與階段目標設定 -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+        <h3 class="font-bold text-sm text-slate-700 flex items-center">
+          <i class="fa-solid fa-bullseye text-rose-500 mr-2"></i>個人生理參數與目標設定
+        </h3>
+
+        <div class="grid grid-cols-4 gap-2">
+          <div>
+            <label class="text-[10px] text-slate-400 block mb-1">性別</label>
+            <select id="profGender" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-medium">
+              <option value="M">男性</option>
+              <option value="F">女性</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[10px] text-slate-400 block mb-1">年齡</label>
+            <input type="number" id="profAge" value="46" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold">
+          </div>
+          <div>
+            <label class="text-[10px] text-slate-400 block mb-1">身高 (cm)</label>
+            <input type="number" id="profHeight" value="172" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold">
+          </div>
+          <div>
+            <label class="text-[10px] text-slate-400 block mb-1">日常活動係數</label>
+            <select id="profActivity" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-medium">
+              <option value="1.2" selected="">久坐辦公 (1.2)</option>
+              <option value="1.375">輕度活動 (1.375)</option>
+              <option value="1.55">中度活動 (1.55)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 蛋白質攝取目標模式選擇 -->
+        <div class="bg-emerald-50/50 border border-emerald-200 rounded-xl p-2.5">
+          <label class="text-[11px] text-emerald-800 font-bold block mb-1">
+            <i class="fa-solid fa-briefcase mr-1"></i>每日純蛋白質目標（辦公室工作者標準・依目標體重計算）
+          </label>
+          <select id="profProteinFactor" class="w-full bg-white border border-emerald-300 rounded-lg p-2 text-xs font-semibold text-slate-700">
+            <option value="0.8">靜態辦公基礎標準 (0.8 g/kg) — 衛福部成人最低建議量</option>
+            <option value="1.0" selected="">辦公室減重保肌標準 (1.0 g/kg) — 推薦！外食三餐最易達成</option>
+            <option value="1.2">辦公族搭配規律運動 (1.2 g/kg) — 下班有慢跑或健身習慣</option>
+            <option value="1.4">進階高蛋白減脂模式 (1.4 g/kg) — 需額外補充豆漿或雞胸肉</option>
+          </select>
+        </div>
+
+        <div class="border-t border-slate-100 pt-2">
+          <p class="text-xs font-semibold text-slate-600 mb-2">起始基準 vs 目標設定</p>
+          <div class="grid grid-cols-4 gap-1.5 mb-2">
+            <div>
+              <label class="text-[10px] text-slate-400 block">起始體重(kg)</label>
+              <input type="number" id="profStartWeight" step="0.1" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-xs">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 block">起始體脂(%)</label>
+              <input type="number" id="profStartFat" step="0.1" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-xs">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 block">起始內臟脂肪</label>
+              <input type="number" id="profStartVisceral" step="1" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-xs">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 block">起始骨骼肌(%)</label>
+              <input type="number" id="profStartMuscle" step="0.1" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-xs">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-4 gap-1.5 mb-2">
+            <div>
+              <label class="text-[10px] text-rose-500 font-medium block">目標體重(kg)</label>
+              <input type="number" id="profTargetWeight" step="0.1" class="w-full bg-rose-50/40 border border-rose-200 rounded-lg p-1.5 text-xs font-bold text-rose-700">
+            </div>
+            <div>
+              <label class="text-[10px] text-rose-500 font-medium block">目標體脂(%)</label>
+              <input type="number" id="profTargetFat" step="0.1" class="w-full bg-rose-50/40 border border-rose-200 rounded-lg p-1.5 text-xs font-bold text-rose-700">
+            </div>
+            <div>
+              <label class="text-[10px] text-rose-500 font-medium block">目標內臟脂肪</label>
+              <input type="number" id="profTargetVisceral" step="1" class="w-full bg-rose-50/40 border border-rose-200 rounded-lg p-1.5 text-xs font-bold text-rose-700">
+            </div>
+            <div>
+              <label class="text-[10px] text-rose-500 font-medium block">目標骨骼肌(%)</label>
+              <input type="number" id="profTargetMuscle" step="0.1" class="w-full bg-rose-50/40 border border-rose-200 rounded-lg p-1.5 text-xs font-bold text-rose-700">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] text-slate-400 block">計畫開始日期</label>
+              <input type="date" id="profStartDate" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-xs">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 block">預計達成天數</label>
+              <input type="number" id="profTargetDays" value="90" min="7" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-xs font-bold">
+            </div>
+          </div>
+        </div>
+
+        <div class="border-t border-slate-100 pt-2">
+          <label class="text-[10px] text-slate-400 block mb-1">選填：Google Gemini API Key (啟用 AI 秒級精準視覺截圖解析)</label>
+          <input type="password" id="profGeminiKey" placeholder="留空則預設使用內建免費離線 OCR 引擎" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-xs">
+        </div>
+
+        <button onclick="saveProfileSettings()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm transition-all">
+          更新個人參數與目標設定
+        </button>
+      </div>
+
+    </section>
+
+    <!-- ================= TAB 5: 週結算與歷史折線圖追蹤 ================= -->
+    <section id="tab-analytics" class="tab-content space-y-4">
+      
+      <!-- 目標達成進度總表 (V3.6 修正骨骼肌方案A達成率) -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-sm text-slate-700 flex items-center">
+            <i class="fa-solid fa-flag-checkered text-emerald-500 mr-2"></i>階段目標達成進度表 (KG 與比率雙重基準)
+          </h3>
+          <span id="daysRemainingBadge" class="text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-semibold">剩餘 -- 天</span>
+        </div>
+
+        <div class="space-y-3 text-xs">
+          <div>
+            <div class="flex justify-between mb-1">
+              <span class="text-slate-600 font-medium">體重達成率 (<span id="progWeightText">--</span>)</span>
+              <span id="progWeightPct" class="font-bold text-blue-600">0%</span>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+              <div id="barGoalWeight" class="bg-blue-500 h-2 rounded-full transition-all" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between mb-1">
+              <span class="text-slate-600 font-medium">體脂達成率 [KG基準] (<span id="progFatText">--</span>)</span>
+              <span id="progFatPct" class="font-bold text-amber-600">0%</span>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+              <div id="barGoalFat" class="bg-amber-500 h-2 rounded-full transition-all" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between mb-1">
+              <span class="text-slate-600 font-medium">內臟脂肪達成率 (<span id="progVisceralText">--</span>)</span>
+              <span id="progVisceralPct" class="font-bold text-rose-600">0%</span>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+              <div id="barGoalVisceral" class="bg-rose-500 h-2 rounded-full transition-all" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between mb-1">
+              <span class="text-slate-600 font-medium">骨骼肌達成率 (<span id="progMuscleText">--</span>)</span>
+              <span id="progMusclePct" class="font-bold text-emerald-600">0%</span>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+              <div id="barGoalMuscle" class="bg-emerald-500 h-2 rounded-full transition-all" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 近 7 日週結算報表 -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-sm text-slate-700 flex items-center">
+            <i class="fa-solid fa-calendar-check text-indigo-500 mr-2"></i>近 7 日週結算與達成率評估
+          </h3>
+          <span id="weeklyOverallScore" class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700">--%</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+            <p class="text-[10px] text-slate-400">7日累計熱量淨收支 (含運動扣除)</p>
+            <p id="weeklyNetCal" class="font-bold text-sm text-slate-800 mt-0.5">0 kcal</p>
+            <p id="weeklyTheoWeight" class="text-[10px] text-slate-500 mt-0.5">理論折合體組織 0.00 kg</p>
+          </div>
+          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+            <p class="text-[10px] text-slate-400">7日蛋白質達標天數</p>
+            <p id="weeklyProDays" class="font-bold text-sm text-emerald-600 mt-0.5">0 / 7 天</p>
+            <p id="weeklyExerciseTotal" class="text-[10px] text-slate-500 mt-0.5">運動累計扣除 0 kcal</p>
+          </div>
+        </div>
+        <p id="weeklyAdviceText" class="text-xs text-slate-600 bg-indigo-50/60 p-2.5 rounded-xl leading-relaxed"></p>
+      </div>
+
+      <!-- 獨立圖表 1：體重歷史趨勢圖 (kg) -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-sm text-slate-700 flex items-center">
+            <i class="fa-solid fa-weight-scale text-blue-500 mr-2"></i>體重 歷史趨勢圖 (獨立座標軸・單位: kg)
+          </h3>
+          <span class="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-semibold">專注體重曲線</span>
+        </div>
+        <div class="h-48 w-full">
+          <canvas id="weightChartCanvas"></canvas>
+        </div>
+      </div>
+
+      <!-- 獨立圖表 2：體脂重與骨骼肌重 歷史趨勢圖 (kg) -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-sm text-slate-700 flex items-center">
+            <i class="fa-solid fa-dumbbell text-emerald-500 mr-2"></i>體脂重 vs 骨骼肌重 歷史趨勢圖 (單位: kg)
+          </h3>
+          <span class="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">由比率(%)自動換算kg</span>
+        </div>
+        <div class="h-52 w-full">
+          <canvas id="fatMuscleChartCanvas"></canvas>
+        </div>
+      </div>
+
+      <!-- 獨立圖表 3：內臟脂肪等級 歷史趨勢折線圖 -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-sm text-slate-700 flex items-center">
+            <i class="fa-solid fa-heart-circle-exclamation text-rose-500 mr-2"></i>內臟脂肪等級 歷史趨勢圖 (單獨呈現・單位: 等級)
+          </h3>
+          <span class="text-[10px] bg-rose-50 text-rose-700 px-2 py-0.5 rounded-full font-semibold">標準健康線 ≤ 9 級</span>
+        </div>
+        <div class="h-48 w-full">
+          <canvas id="visceralChartCanvas"></canvas>
+        </div>
+      </div>
+
+      <!-- 獨立圖表 4：最新身體組成圓餅圖 (KG 與 %) -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-bold text-sm text-slate-700 flex items-center">
+            <i class="fa-solid fa-chart-pie text-purple-500 mr-2"></i>最新身體組成圓餅圖 (<span id="pieChartDateLabel">--</span>)
+          </h3>
+          <span id="pieTotalWeightBadge" class="text-[11px] bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full font-bold">總重 -- kg</span>
+        </div>
+        <div class="h-52 w-full flex items-center justify-center">
+          <canvas id="bodyCompositionPieCanvas"></canvas>
+        </div>
+        <div class="grid grid-cols-3 gap-2 text-center mt-3 pt-2 border-t border-slate-100 text-xs">
+          <div class="bg-emerald-50/70 rounded-xl p-2 border border-emerald-100">
+            <p class="text-[10px] text-emerald-700 font-semibold">骨骼肌 (率/重)</p>
+            <p id="pieMuscleStat" class="font-bold text-emerald-800 mt-0.5">--% (--kg)</p>
+          </div>
+          <div class="bg-amber-50/70 rounded-xl p-2 border border-amber-100">
+            <p class="text-[10px] text-amber-700 font-semibold">體脂肪 (率/重)</p>
+            <p id="pieFatStat" class="font-bold text-amber-800 mt-0.5">--% (--kg)</p>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-2 border border-slate-200">
+            <p class="text-[10px] text-slate-600 font-semibold">其他(骨/水/內臟)</p>
+            <p id="pieOtherStat" class="font-bold text-slate-700 mt-0.5">--% (--kg)</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 獨立圖表 5：運動後淨熱量扣除減重目標攝取之「赤字/剩餘 vs 超標」直條圖 -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between mb-1.5">
+          <h3 class="font-bold text-sm text-slate-700 flex items-center">
+            <i class="fa-solid fa-fire-flame-curved text-amber-500 mr-2"></i>每日運動後淨熱量 vs 減重目標 (赤字/剩餘直條圖)
+          </h3>
+        </div>
+        <p class="text-[11px] text-slate-500 mb-3">
+          計算公式：<b>(飲食攝取 - 運動消耗) - 減重目標攝取</b>。負數（🟢綠色向下）代表<b>達成赤字／尚有剩餘額度</b>；正數（🔴紅色向上）代表<b>超出目標</b>。
+        </p>
+        <div class="h-56 w-full">
+          <canvas id="energyChartCanvas"></canvas>
+        </div>
+      </div>
+
+      <!-- 資料匯出、手機下載與 LINE 分享管理 -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-sm text-slate-700 flex items-center">
+            <i class="fa-solid fa-mobile-screen-button text-emerald-600 mr-2"></i>PWA 桌面安裝與歷史資料備份
+          </h3>
+          <span class="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">支援離線獨立運作</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <button onclick="downloadStandaloneApp()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center shadow-sm">
+            <i class="fa-solid fa-file-arrow-down mr-1.5"></i>下載本系統至手機
+          </button>
+          <button onclick="openShareDownloadModal('download')" class="line-green text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center shadow-sm">
+            <i class="fa-solid fa-plus-square text-sm mr-1.5"></i>安裝到手機主畫面
+          </button>
+        </div>
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <button onclick="exportDataJSON()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 rounded-xl text-xs flex items-center justify-center">
+            <i class="fa-solid fa-download mr-1.5"></i>匯出備份 (JSON)
+          </button>
+          <label class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 rounded-xl text-xs flex items-center justify-center cursor-pointer">
+            <i class="fa-solid fa-upload mr-1.5"></i>匯入還原紀錄
+            <input type="file" accept=".json" class="hidden" onchange="importDataJSON(event)">
+          </label>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- ================= 彈窗 1：LINE 分享與 PWA 手機桌面安裝中心 ================= -->
+  <div id="shareDownloadModal" class="fixed inset-0 bg-slate-950/75 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-3.5 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center space-x-2">
+          <span class="w-8 h-8 rounded-xl line-green text-white flex items-center justify-center text-lg shadow-sm">
+            <i class="fa-brands fa-line"></i>
+          </span>
+          <div>
+            <h3 class="font-bold text-sm text-slate-800">智慧體重管理：LINE 分享與 PWA 安裝</h3>
+            <p class="text-[11px] text-slate-400">一鍵複製戰報、安裝到手機桌面或下載保存</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeShareDownloadModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center justify-center">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <!-- 即時操作狀態回饋橫幅 -->
+      <div id="modalActionFeedback" class="rounded-xl p-3 text-xs font-bold flex items-start space-x-2 border leading-relaxed bg-emerald-50 text-emerald-900 border-emerald-300">
+        <i id="modalFeedbackIcon" class="fa-solid fa-circle-check text-emerald-600 text-base mt-0.5 shrink-0"></i>
+        <span id="modalFeedbackText">✅ 今日戰報已自動幫您複製好！現在可以直接打開手機 LINE 聊天室「貼上」，或點下方按鈕傳送！</span>
+      </div>
+
+      <!-- 功能 1：LINE 分享區 -->
+      <div class="space-y-2.5 bg-emerald-50/60 border border-emerald-200 rounded-2xl p-3.5">
+        <div class="flex items-center justify-between">
+          <p class="text-xs font-bold text-slate-800 flex items-center">
+            <span class="w-5 h-5 rounded-full bg-[#06C755] text-white text-[11px] flex items-center justify-center mr-1.5 font-bold">1</span>
+            今日戰報內容（可直接複製貼到 LINE）
+          </p>
+          <span id="autoCopyHintTag" class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">✅ 已自動複製</span>
+        </div>
+
+        <!-- 戰報即時文字框 -->
+        <div class="bg-white border border-emerald-300 rounded-xl p-2">
+          <textarea id="modalReportTextarea" readonly="" rows="5" class="w-full bg-transparent text-[11px] text-slate-800 font-semibold focus:outline-none resize-none leading-relaxed"></textarea>
+        </div>
+
+        <button type="button" id="btnCopyTextOnly" onclick="copyReportTextToClipboard()" class="w-full line-green text-white font-bold py-3 px-3 rounded-xl text-xs flex items-center justify-center space-x-2 shadow-md active:scale-95 transition-transform">
+          <i class="fa-solid fa-copy text-sm"></i>
+          <span id="btnCopyTextLabel">點此一鍵複製戰報（再打開 LINE 貼上）</span>
+        </button>
+
+        <div class="grid grid-cols-2 gap-2 pt-0.5">
+          <a id="directLineAnchor" href="#" target="_blank" rel="noopener noreferrer" onclick="handleDirectLineAnchorClick()" class="bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-300 font-bold py-2.5 px-2 rounded-xl text-[11px] flex items-center justify-center space-x-1 text-center active:scale-95 transition-transform">
+            <i class="fa-brands fa-line text-sm text-[#06C755]"></i>
+            <span>直接喚起 LINE</span>
+          </a>
+          <button type="button" onclick="shareSystemFileViaWebShare()" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-bold py-2.5 px-2 rounded-xl text-[11px] flex items-center justify-center space-x-1 active:scale-95 transition-transform">
+            <i class="fa-solid fa-share-nodes text-blue-500"></i>
+            <span>手機系統分享</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 功能 2：PWA 手機主畫面安裝與獨立檔保存區 -->
+      <div id="modalDownloadSection" class="space-y-2.5 border border-blue-200 bg-blue-50/40 rounded-2xl p-3.5">
+        <p class="text-xs font-bold text-slate-800 flex items-center">
+          <span class="w-5 h-5 rounded-full bg-blue-600 text-white text-[11px] flex items-center justify-center mr-1.5 font-bold">2</span>
+          安裝為手機桌面 PWA App 或下載檔案
+        </p>
+
+        <div class="bg-white/90 border border-blue-200 rounded-xl p-2.5 text-[11px] text-slate-600 space-y-1 leading-relaxed">
+          <p class="font-bold text-blue-900"><i class="fa-solid fa-mobile-screen-button mr-1"></i>如何把本系統變成手機桌面 App (PWA)？</p>
+          <p>• <b>iPhone (Safari)</b>：點底部中間「<b>分享</b> <i class="fa-solid fa-arrow-up-from-bracket"></i>」➔ 選「<b>加入主畫面</b>」。</p>
+          <p>• <b>Android (Chrome)</b>：點右上角「<b>⋮</b>」➔ 選「<b>安裝應用程式 / 加到主畫面</b>」。</p>
+          <p class="text-[10px] text-emerald-700 font-semibold">💡 若將此 HTML 放上 GitHub Pages，即可一鍵安裝至桌面且永久保留歷史資料！</p>
+        </div>
+
+        <button type="button" id="btnTriggerPWAInstall" onclick="triggerNativePWAInstall()" class="hidden w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center space-x-1.5 shadow-sm">
+          <i class="fa-solid fa-download"></i>
+          <span>點此直接安裝「智慧體重管理」App 至手機桌面</span>
+        </button>
+
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" onclick="downloadStandaloneApp(false)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-2 rounded-xl text-[11px] flex items-center justify-center space-x-1 shadow-sm active:scale-95 transition-transform">
+            <i class="fa-solid fa-download"></i>
+            <span>下載標準乾淨版</span>
+          </button>
+          <button type="button" onclick="downloadStandaloneApp(true)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-2 rounded-xl text-[11px] flex items-center justify-center space-x-1 shadow-sm active:scale-95 transition-transform">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>下載含目前資料版</span>
+          </button>
+        </div>
+
+        <div class="pt-1 border-t border-blue-100 space-y-1.5">
+          <p class="text-[11px] text-slate-600">若預覽視窗阻擋檔案下載，可點下方按鈕複製完整網頁碼：</p>
+          <button type="button" onclick="copyFullAppSourceCode()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center space-x-1.5 shadow-sm active:scale-95 transition-transform">
+            <i class="fa-solid fa-code text-emerald-400"></i>
+            <span id="btnCopySourceLabel">一鍵複製完整網頁程式碼</span>
+          </button>
+        </div>
+      </div>
+
+      <button type="button" onclick="closeShareDownloadModal()" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 rounded-xl text-xs">
+        關閉視窗
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= 彈窗 2：系統友善提示訊息框 ================= -->
+  <div id="customToastModal" class="fixed inset-0 bg-slate-950/50 z-[60] hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-xs rounded-2xl p-4 shadow-xl border border-slate-100 text-center space-y-3 animate-[fadeIn_0.15s_ease-in-out]">
+      <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto text-lg">
+        <i class="fa-solid fa-bell"></i>
+      </div>
+      <p id="customToastMessage" class="text-xs font-medium text-slate-700 leading-relaxed whitespace-pre-line"></p>
+      <button type="button" onclick="closeCustomToast()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-xl text-xs">
+        確定
+      </button>
+    </div>
+  </div>
+
+  <!-- 底部固定導覽列 -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50" style="padding-bottom: env(safe-area-inset-bottom);">
+    <div class="max-w-md mx-auto grid grid-cols-5 text-center py-1.5">
+      <button onclick="switchTab('tab-dashboard')" id="nav-tab-dashboard" class="nav-btn flex flex-col items-center justify-center py-1 text-emerald-600">
+        <i class="fa-solid fa-gauge-high text-base"></i>
+        <span class="text-[10px] font-medium mt-0.5">今日雙基底</span>
+      </button>
+      <button onclick="switchTab('tab-food')" id="nav-tab-food" class="nav-btn flex flex-col items-center justify-center py-1 text-slate-400">
+        <i class="fa-solid fa-utensils text-base"></i>
+        <span class="text-[10px] font-medium mt-0.5">餐點營養</span>
+      </button>
+      <button onclick="switchTab('tab-exercise')" id="nav-tab-exercise" class="nav-btn flex flex-col items-center justify-center py-1 text-slate-400">
+        <i class="fa-solid fa-heart-pulse text-base"></i>
+        <span class="text-[10px] font-medium mt-0.5">運動心率</span>
+      </button>
+      <button onclick="switchTab('tab-body')" id="nav-tab-body" class="nav-btn text-slate-400 flex flex-col items-center justify-center py-1">
+        <i class="fa-solid fa-camera text-base"></i>
+        <span class="text-[10px] font-medium mt-0.5">截圖與目標</span>
+      </button>
+      <button onclick="switchTab('tab-analytics')" id="nav-tab-analytics" class="nav-btn text-slate-400 flex flex-col items-center justify-center py-1">
+        <i class="fa-solid fa-chart-line text-base"></i>
+        <span class="text-[10px] font-medium mt-0.5">週結算圖表</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- 核心邏輯腳本 -->
+  <script>
+    // ================= 1. 依據 BeGoodTool 擴充之五大分類食物營養資料庫 =================
+    const FOOD_PRESETS = [
+      // 【主食類】
+      { cat: "主食類", name: "白米飯 (1碗 200g)", cal: 225, pro: 5.0, fat: 0.6, carb: 50.0, vit: 5 },
+      { cat: "主食類", name: "糙米飯 / 五穀飯 (1碗 200g)", cal: 220, pro: 5.8, fat: 1.8, carb: 46.0, vit: 20 },
+      { cat: "主食類", name: "烤地瓜 (1個 100g)", cal: 135, pro: 1.6, fat: 0.2, carb: 31.5, vit: 30 },
+      { cat: "主食類", name: "燕麥 (1碗 100g)", cal: 389, pro: 13.5, fat: 6.5, carb: 68.0, vit: 25 },
+      { cat: "主食類", name: "大燕麥片 (1份 50g)", cal: 195, pro: 6.8, fat: 3.3, carb: 34.0, vit: 15 },
+      { cat: "主食類", name: "全麥麵包 (1片 25g)", cal: 65, pro: 2.6, fat: 1.0, carb: 12.0, vit: 10 },
+      { cat: "主食類", name: "白吐司 (1片 40g)", cal: 90, pro: 2.8, fat: 1.5, carb: 16.5, vit: 5 },
+      { cat: "主食類", name: "鮮奶吐司 (1片 60g)", cal: 196, pro: 5.5, fat: 6.2, carb: 29.5, vit: 8 },
+      { cat: "主食類", name: "白麵包 (1片 25g)", cal: 75, pro: 2.2, fat: 1.2, carb: 14.0, vit: 5 },
+      { cat: "主食類", name: "小餐包 (1個 25g)", cal: 90, pro: 2.3, fat: 3.0, carb: 13.5, vit: 5 },
+      { cat: "主食類", name: "起司三明治 (1個 50g)", cal: 200, pro: 7.5, fat: 9.0, carb: 22.0, vit: 10 },
+      { cat: "主食類", name: "蛋餅 (1份 120g)", cal: 263, pro: 9.2, fat: 11.5, carb: 30.5, vit: 10 },
+      { cat: "主食類", name: "蘿蔔糕 (1塊 80g)", cal: 90, pro: 1.8, fat: 2.2, carb: 15.8, vit: 5 },
+      { cat: "主食類", name: "飯糰 (1份 290g)", cal: 518, pro: 13.5, fat: 16.0, carb: 80.0, vit: 10 },
+      { cat: "主食類", name: "水煎包 (1個 100g)", cal: 180, pro: 6.0, fat: 6.5, carb: 24.5, vit: 12 },
+      { cat: "主食類", name: "肉包 (1個 80g)", cal: 200, pro: 7.2, fat: 6.8, carb: 27.5, vit: 8 },
+      { cat: "主食類", name: "蔥抓餅 (1份 110g)", cal: 310, pro: 6.5, fat: 13.5, carb: 40.5, vit: 5 },
+      { cat: "主食類", name: "乾麵 (1份 250g)", cal: 410, pro: 11.5, fat: 12.0, carb: 64.0, vit: 10 },
+      { cat: "主食類", name: "麻醬麵 (1份 286g)", cal: 500, pro: 14.5, fat: 18.5, carb: 69.0, vit: 12 },
+      { cat: "主食類", name: "陽春麵 (1碗 450g)", cal: 270, pro: 9.5, fat: 4.5, carb: 48.0, vit: 12 },
+      { cat: "主食類", name: "涼麵 (1份 190g)", cal: 215, pro: 6.5, fat: 7.5, carb: 30.5, vit: 10 },
+      { cat: "主食類", name: "蕎麥麵 (1碗 100g)", cal: 100, pro: 4.2, fat: 0.8, carb: 19.5, vit: 15 },
+      { cat: "主食類", name: "雞肉飯 (1份 290g)", cal: 380, pro: 18.5, fat: 10.5, carb: 53.0, vit: 8 },
+      { cat: "主食類", name: "火雞肉飯 (1份 300g)", cal: 510, pro: 22.0, fat: 18.0, carb: 65.0, vit: 10 },
+      { cat: "主食類", name: "滷肉飯 (1碗 200g)", cal: 440, pro: 11.0, fat: 21.0, carb: 52.0, vit: 5 },
+      { cat: "主食類", name: "水餃 (1顆 25g)", cal: 65, pro: 2.8, fat: 3.2, carb: 6.2, vit: 6 },
+      { cat: "主食類", name: "鍋貼 (1顆 30g)", cal: 60, pro: 2.5, fat: 2.8, carb: 6.2, vit: 5 },
+      { cat: "主食類", name: "餛飩麵 (1碗 450g)", cal: 550, pro: 19.0, fat: 18.0, carb: 78.0, vit: 12 },
+      { cat: "主食類", name: "牛肉麵 (1碗 500g)", cal: 460, pro: 26.5, fat: 14.0, carb: 57.0, vit: 15 },
+      { cat: "主食類", name: "炒飯 (1份 300g)", cal: 550, pro: 14.5, fat: 20.0, carb: 78.0, vit: 12 },
+      { cat: "主食類", name: "義大利肉醬麵 (1份 248g)", cal: 330, pro: 13.5, fat: 9.0, carb: 48.5, vit: 18 },
+      { cat: "主食類", name: "紫菜壽司 (半條 200g)", cal: 170, pro: 5.5, fat: 2.0, carb: 32.5, vit: 15 },
+      { cat: "主食類", name: "豆皮壽司 (2個 200g)", cal: 170, pro: 5.0, fat: 3.5, carb: 29.5, vit: 8 },
+      { cat: "主食類", name: "碗粿 (1份 210g)", cal: 253, pro: 6.5, fat: 7.5, carb: 40.0, vit: 5 },
+      { cat: "主食類", name: "肉粽 (1份 240g)", cal: 515, pro: 15.0, fat: 21.0, carb: 66.5, vit: 10 },
+      { cat: "主食類", name: "潤餅 (1份 340g)", cal: 495, pro: 16.5, fat: 18.0, carb: 66.5, vit: 35 },
+      { cat: "主食類", name: "粥 / 白粥 (1碗 200g)", cal: 92, pro: 2.0, fat: 0.2, carb: 20.5, vit: 2 },
+      { cat: "主食類", name: "海鮮粥 (1碗 200g)", cal: 278, pro: 16.5, fat: 6.0, carb: 39.5, vit: 15 },
+      { cat: "主食類", name: "耐力能量膠 Energy Gel (1包)", cal: 100, pro: 0.0, fat: 0.0, carb: 25.0, vit: 5 },
+
+      // 【蔬菜類】
+      { cat: "蔬菜類", name: "花椰菜 (1份 125g)", cal: 30, pro: 3.2, fat: 0.3, carb: 5.5, vit: 55 },
+      { cat: "蔬菜類", name: "高麗菜 (1份 145g)", cal: 30, pro: 1.8, fat: 0.2, carb: 6.5, vit: 45 },
+      { cat: "蔬菜類", name: "空心菜 (1份 100g)", cal: 20, pro: 2.2, fat: 0.3, carb: 3.2, vit: 45 },
+      { cat: "蔬菜類", name: "球芽甘藍 (1份 155g)", cal: 55, pro: 4.5, fat: 0.5, carb: 11.0, vit: 60 },
+      { cat: "蔬菜類", name: "胡蘿蔔 (1個 72g)", cal: 30, pro: 0.7, fat: 0.2, carb: 6.8, vit: 55 },
+      { cat: "蔬菜類", name: "芹菜 (1份 40g)", cal: 5, pro: 0.4, fat: 0.1, carb: 1.2, vit: 25 },
+      { cat: "蔬菜類", name: "大蕃茄 (1個 135g)", cal: 25, pro: 1.2, fat: 0.2, carb: 5.5, vit: 45 },
+      { cat: "蔬菜類", name: "雪裡紅 / 雪菜 (1份 100g)", cal: 60, pro: 2.8, fat: 3.2, carb: 5.0, vit: 40 },
+      { cat: "蔬菜類", name: "竹筍 (1份 100g)", cal: 25, pro: 2.5, fat: 0.2, carb: 4.5, vit: 30 },
+      { cat: "蔬菜類", name: "甜玉米棒 (1根 100g)", cal: 70, pro: 2.8, fat: 1.0, carb: 14.5, vit: 30 },
+      { cat: "蔬菜類", name: "燙地瓜葉 (1盤 120g)", cal: 35, pro: 3.2, fat: 0.5, carb: 6.0, vit: 55 },
+      { cat: "蔬菜類", name: "燙青江菜 / 小白菜 (1盤 120g)", cal: 22, pro: 2.0, fat: 0.3, carb: 3.5, vit: 50 },
+      { cat: "蔬菜類", name: "菠菜 (1份 100g)", cal: 25, pro: 2.8, fat: 0.4, carb: 3.8, vit: 60 },
+      { cat: "蔬菜類", name: "金針菇 / 鴻喜菇 (1份 100g)", cal: 30, pro: 2.7, fat: 0.3, carb: 6.0, vit: 30 },
+      { cat: "蔬菜類", name: "小黃瓜 (1條 100g)", cal: 15, pro: 0.8, fat: 0.1, carb: 3.2, vit: 30 },
+      { cat: "蔬菜類", name: "青椒 / 彩色甜椒 (1份 100g)", cal: 25, pro: 1.0, fat: 0.2, carb: 5.8, vit: 60 },
+      { cat: "蔬菜類", name: "苦瓜 (1份 100g)", cal: 20, pro: 1.0, fat: 0.1, carb: 4.2, vit: 50 },
+      { cat: "蔬菜類", name: "海帶 / 海帶芽 (1份 100g)", cal: 20, pro: 1.5, fat: 0.2, carb: 4.0, vit: 40 },
+      { cat: "蔬菜類", name: "白菜肉捲 (1條 200g)", cal: 130, pro: 8.5, fat: 6.5, carb: 9.5, vit: 35 },
+      { cat: "蔬菜類", name: "生菜沙拉 無醬 (1大碗 150g)", cal: 35, pro: 1.8, fat: 0.3, carb: 7.0, vit: 60 },
+
+      // 【水果類】
+      { cat: "水果類", name: "芭樂 (1顆 215g)", cal: 70, pro: 2.6, fat: 0.4, carb: 16.5, vit: 80 },
+      { cat: "水果類", name: "蘋果 (1顆 120g)", cal: 60, pro: 0.3, fat: 0.2, carb: 15.5, vit: 35 },
+      { cat: "水果類", name: "香蕉 中型 (1根 120g)", cal: 105, pro: 1.3, fat: 0.4, carb: 27.0, vit: 35 },
+      { cat: "水果類", name: "香蕉 大串/特大 (370g)", cal: 295, pro: 3.8, fat: 1.0, carb: 74.0, vit: 60 },
+      { cat: "水果類", name: "水梨 (1顆 210g)", cal: 90, pro: 0.8, fat: 0.2, carb: 23.0, vit: 35 },
+      { cat: "水果類", name: "蓮霧 (1份 270g)", cal: 70, pro: 1.2, fat: 0.2, carb: 17.5, vit: 40 },
+      { cat: "水果類", name: "棗子 (1個 70g)", cal: 30, pro: 0.7, fat: 0.1, carb: 7.5, vit: 45 },
+      { cat: "水果類", name: "聖女小蕃茄 (1份 100g)", cal: 32, pro: 1.0, fat: 0.2, carb: 7.2, vit: 50 },
+      { cat: "水果類", name: "鳳梨 (1片 120g)", cal: 50, pro: 0.6, fat: 0.1, carb: 12.8, vit: 45 },
+      { cat: "水果類", name: "木瓜 (1粒 390g)", cal: 85, pro: 1.5, fat: 0.3, carb: 21.0, vit: 70 },
+      { cat: "水果類", name: "西瓜 (1片 240g)", cal: 40, pro: 1.0, fat: 0.2, carb: 9.5, vit: 30 },
+      { cat: "水果類", name: "芒果 (1個 180g)", cal: 100, pro: 1.2, fat: 0.4, carb: 25.0, vit: 55 },
+      { cat: "水果類", name: "桃子 (1個 120g)", cal: 45, pro: 0.9, fat: 0.1, carb: 11.2, vit: 35 },
+      { cat: "水果類", name: "橘子 (1顆 200g)", cal: 65, pro: 1.2, fat: 0.2, carb: 16.0, vit: 60 },
+      { cat: "水果類", name: "桔子 (1顆 120g)", cal: 60, pro: 0.9, fat: 0.2, carb: 15.0, vit: 50 },
+      { cat: "水果類", name: "葡萄 (1份 350g)", cal: 170, pro: 1.8, fat: 0.5, carb: 43.0, vit: 40 },
+      { cat: "水果類", name: "柿子 (1顆 200g)", cal: 120, pro: 1.2, fat: 0.4, carb: 30.0, vit: 55 },
+      { cat: "水果類", name: "香瓜 (1顆 500g)", cal: 160, pro: 2.5, fat: 0.5, carb: 39.0, vit: 50 },
+      { cat: "水果類", name: "楊桃 (1個 310g)", cal: 100, pro: 2.0, fat: 0.5, carb: 24.0, vit: 55 },
+      { cat: "水果類", name: "奇異果 (1顆 100g)", cal: 55, pro: 1.0, fat: 0.5, carb: 13.0, vit: 75 },
+
+      // 【肉類】
+      { cat: "肉類", name: "雞胸肉 (1小份 35g)", cal: 55, pro: 8.2, fat: 0.6, carb: 0.2, vit: 5 },
+      { cat: "肉類", name: "舒肥雞胸肉 (1整片 100g)", cal: 115, pro: 23.5, fat: 1.5, carb: 1.0, vit: 10 },
+      { cat: "肉類", name: "雞腿下部/棒棒腿 (1份 30g)", cal: 73, pro: 6.5, fat: 5.0, carb: 0.0, vit: 5 },
+      { cat: "肉類", name: "雞腿上部/腿排 (1份 30g)", cal: 73, pro: 6.2, fat: 5.2, carb: 0.0, vit: 5 },
+      { cat: "肉類", name: "去皮滷雞腿 (1整隻 120g)", cal: 210, pro: 24.0, fat: 12.0, carb: 1.5, vit: 10 },
+      { cat: "肉類", name: "宮保雞丁 (1份 100g)", cal: 129, pro: 14.0, fat: 6.5, carb: 3.8, vit: 10 },
+      { cat: "肉類", name: "牛排 (1片 85g)", cal: 220, pro: 19.5, fat: 15.0, carb: 0.5, vit: 15 },
+      { cat: "肉類", name: "炒牛肉 (1盤 250g)", cal: 300, pro: 26.0, fat: 19.0, carb: 6.0, vit: 20 },
+      { cat: "肉類", name: "日式燒牛 (1份 100g)", cal: 517, pro: 16.0, fat: 48.0, carb: 4.5, vit: 10 },
+      { cat: "肉類", name: "豬排 (1片 78g)", cal: 305, pro: 16.5, fat: 22.0, carb: 10.0, vit: 10 },
+      { cat: "肉類", name: "瘦豬里肌肉片 (1份 100g)", cal: 145, pro: 21.0, fat: 6.2, carb: 0.5, vit: 15 },
+      { cat: "肉類", name: "紅燒獅子頭 (1份 100g)", cal: 295, pro: 13.5, fat: 24.5, carb: 5.0, vit: 8 },
+      { cat: "肉類", name: "德國豬腳 (1份 100g)", cal: 225, pro: 19.0, fat: 16.0, carb: 1.0, vit: 8 },
+      { cat: "肉類", name: "培根 (1片 7g)", cal: 42, pro: 1.8, fat: 3.8, carb: 0.1, vit: 2 },
+      { cat: "肉類", name: "烤香腸 (1條 35g)", cal: 128, pro: 5.2, fat: 10.5, carb: 3.2, vit: 2 },
+      { cat: "肉類", name: "香腸 (1大條 100g)", cal: 320, pro: 13.5, fat: 26.5, carb: 7.0, vit: 5 },
+      { cat: "肉類", name: "鹽酥雞 (1份 180g)", cal: 530, pro: 28.0, fat: 34.0, carb: 28.0, vit: 5 },
+      { cat: "肉類", name: "清蒸檸檬魚 (1份 100g)", cal: 135, pro: 19.5, fat: 5.5, carb: 1.8, vit: 20 },
+      { cat: "肉類", name: "乾煎鮭魚排 (1片 120g)", cal: 250, pro: 24.0, fat: 16.5, carb: 0.0, vit: 25 },
+      { cat: "肉類", name: "烤魷魚 (1隻 110g)", cal: 375, pro: 32.0, fat: 18.0, carb: 21.0, vit: 15 },
+      { cat: "肉類", name: "蛤蠣湯 (1碗 100g)", cal: 80, pro: 10.5, fat: 2.5, carb: 3.8, vit: 15 },
+      { cat: "肉類", name: "鮮蝦 / 白灼蝦 (1份 100g)", cal: 100, pro: 21.0, fat: 1.2, carb: 0.8, vit: 15 },
+      { cat: "肉類", name: "牡蠣 生/燙 (1份 100g)", cal: 65, pro: 9.5, fat: 2.0, carb: 2.2, vit: 25 },
+
+      // 【奶蛋類】
+      { cat: "奶蛋類", name: "茶葉蛋 (1個 55g)", cal: 78, pro: 7.0, fat: 5.2, carb: 0.8, vit: 15 },
+      { cat: "奶蛋類", name: "溏心蛋 / 水煮蛋 (1個 55g)", cal: 70, pro: 6.8, fat: 4.8, carb: 0.6, vit: 15 },
+      { cat: "奶蛋類", name: "蒸蛋 (1份 100g)", cal: 70, pro: 6.2, fat: 4.5, carb: 1.2, vit: 12 },
+      { cat: "奶蛋類", name: "滷蛋 (1個 60g)", cal: 95, pro: 7.8, fat: 6.5, carb: 1.5, vit: 15 },
+      { cat: "奶蛋類", name: "荷包蛋 (1個 55g)", cal: 92, pro: 6.8, fat: 7.0, carb: 0.6, vit: 15 },
+      { cat: "奶蛋類", name: "蛋黃 (1個 20g)", cal: 50, pro: 2.7, fat: 4.3, carb: 0.2, vit: 12 },
+      { cat: "奶蛋類", name: "全脂鮮乳 (1杯 250ml)", cal: 160, pro: 8.0, fat: 9.0, carb: 12.0, vit: 20 },
+      { cat: "奶蛋類", name: "低脂鮮乳 (1杯 250ml)", cal: 115, pro: 8.2, fat: 3.8, carb: 12.2, vit: 20 },
+      { cat: "奶蛋類", name: "豆漿 (1份 100ml)", cal: 55, pro: 3.6, fat: 2.0, carb: 5.5, vit: 5 },
+      { cat: "奶蛋類", name: "無糖豆漿 (1瓶 400ml)", cal: 140, pro: 13.6, fat: 7.0, carb: 6.0, vit: 10 },
+      { cat: "奶蛋類", name: "米漿 (1份 100ml)", cal: 47, pro: 1.2, fat: 1.8, carb: 6.5, vit: 3 },
+      { cat: "奶蛋類", name: "無糖希臘優格 (1杯 100g)", cal: 90, pro: 9.5, fat: 3.5, carb: 4.8, vit: 15 },
+      { cat: "奶蛋類", name: "起司片 (1片 22g)", cal: 70, pro: 4.5, fat: 5.5, carb: 0.6, vit: 10 },
+      { cat: "奶蛋類", name: "油豆腐 (1塊 50g)", cal: 45, pro: 4.2, fat: 3.0, carb: 0.5, vit: 5 },
+      { cat: "奶蛋類", name: "傳統板豆腐 (1塊 100g)", cal: 85, pro: 8.5, fat: 5.0, carb: 1.8, vit: 10 },
+      { cat: "奶蛋類", name: "嫩豆腐 / 涼拌豆腐 (1盒 150g)", cal: 75, pro: 7.5, fat: 4.0, carb: 2.2, vit: 8 },
+      { cat: "奶蛋類", name: "麻婆豆腐 (1碗 200g)", cal: 246, pro: 14.5, fat: 17.5, carb: 7.5, vit: 10 },
+      { cat: "奶蛋類", name: "布丁 (1個 100g)", cal: 110, pro: 3.0, fat: 3.2, carb: 17.5, vit: 5 },
+      { cat: "奶蛋類", name: "乳清蛋白飲 (1匙沖泡)", cal: 120, pro: 24.0, fat: 1.5, carb: 3.0, vit: 10 }
+    ];
+
+    const DEFAULT_EXERCISE_PRESETS = [
+      { name: "Zone 2 有氧慢跑", icon: "🏃‍♂️", mets: 7.5 },
+      { name: "半馬配速跑 / 節奏跑", icon: "🔥", mets: 10.0 },
+      { name: "間歇跑訓練", icon: "⚡", mets: 11.5 },
+      { name: "重量訓練 / 肌力", icon: "🏋️‍♂️", mets: 5.5 },
+      { name: "單車騎行", icon: "🚴‍♂️", mets: 7.0 },
+      { name: "健行 / 快走", icon: "🚶‍♂️", mets: 4.0 },
+      { name: "核心與伸展瑜珈", icon: "🧘‍♂️", mets: 2.8 }
+    ];
+
+    // ================= 2. 狀態管理與預設資料庫 =================
+    const STORAGE_KEY = "PWA_FITNESS_DUAL_BASE_V1";
+    let currentSelectedDate = new Date().toISOString().split('T')[0];
+    let currentFoodCategory = "全部";
+    let weightChartInstance = null;
+    let fatMuscleChartInstance = null;
+    let visceralChartInstance = null;
+    let bodyCompPieChartInstance = null;
+    let energyChartInstance = null;
+    let deferredPWAInstallPrompt = null;
+
+    let appState = {
+      profile: {
+        gender: "M",
+        age: 46,
+        height: 172,
+        activity: 1.2,
+        proteinFactor: 1.0,
+        startWeight: 83.0,
+        startFat: 29.8,      // 起始體脂率 (%)
+        startVisceral: 17,   // 起始內臟脂肪等級
+        startMuscle: 29.3,   // 起始骨骼肌率 (%)
+        targetWeight: 73.0,
+        targetFat: 24.0,     // 目標體脂率 (%)
+        targetVisceral: 11,  // 目標內臟脂肪等級
+        targetMuscle: 32.0,  // 目標骨骼肌率 (%)
+        startDate: new Date().toISOString().split('T')[0],
+        targetDays: 90,
+        geminiKey: "",
+        muscleUnitIsPercent: true
+      },
+      customFoods: [],
+      customExercises: [],
+      logs: {}
+    };
+
+    // ================= 3. 初始化、PWA 圖示生成與儲存邏輯 =================
+    window.addEventListener('DOMContentLoaded', () => {
+      checkLineInAppBrowser();
+      initDynamicPWAEnvironment();
+      loadState();
+      initFoodPresetDropdown();
+      initExercisePresetDropdown();
+      document.getElementById('currentDateInput').value = currentSelectedDate;
+      syncProfileInputs();
+      renderAll();
+    });
+
+    // 攔截系統原生 PWA 安裝提示
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPWAInstallPrompt = e;
+      document.getElementById('btnTriggerPWAInstall')?.classList.remove('hidden');
+    });
+
+    async function triggerNativePWAInstall() {
+      if (!deferredPWAInstallPrompt) {
+        showNotice("請點擊瀏覽器選單中的「加入主畫面」或「安裝應用程式」即可完成安裝！");
+        return;
+      }
+      deferredPWAInstallPrompt.prompt();
+      const { outcome } = await deferredPWAInstallPrompt.userChoice;
+      if (outcome === 'accepted') {
+        document.getElementById('btnTriggerPWAInstall')?.classList.add('hidden');
+      }
+      deferredPWAInstallPrompt = null;
+    }
+
+    // 動態繪製高解析度 PWA 專屬 App 圖示、Manifest 與離線快取支援
+    function generateAppIconDataURL(size = 512) {
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+
+      // 深色漸層圓角背景
+      const grad = ctx.createLinearGradient(0, 0, size, size);
+      grad.addColorStop(0, '#0f172a');
+      grad.addColorStop(1, '#064e3b');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.roundRect(0, 0, size, size, size * 0.22);
+      ctx.fill();
+
+      // 翡翠綠閃電與體重計徽章圖案
+      ctx.fillStyle = '#10b981';
+      ctx.beginPath();
+      ctx.arc(size * 0.5, size * 0.45, size * 0.3, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `900 ${Math.round(size * 0.28)}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('⚡', size * 0.5, size * 0.46);
+
+      ctx.fillStyle = '#6ee7b7';
+      ctx.font = `bold ${Math.round(size * 0.11)}px sans-serif`;
+      ctx.fillText('智慧體重', size * 0.5, size * 0.84);
+
+      return canvas.toDataURL('image/png');
+    }
+
+    function initDynamicPWAEnvironment() {
+      try {
+        const icon192 = generateAppIconDataURL(192);
+        const icon512 = generateAppIconDataURL(512);
+
+        const appleLink = document.getElementById('appleTouchIconLink');
+        const favLink = document.getElementById('favIconLink');
+        if (appleLink) appleLink.href = icon192;
+        if (favLink) favLink.href = icon192;
+
+        const manifest = {
+          name: "智慧體重管理 V3.6",
+          short_name: "智慧體重管理",
+          description: "專為辦公室工作者設計之雙基底智慧體重與體組成管理系統",
+          start_url: "./",
+          scope: "./",
+          display: "standalone",
+          orientation: "portrait",
+          background_color: "#0f172a",
+          theme_color: "#0f172a",
+          icons: [
+            { src: icon192, sizes: "192x192", type: "image/png", purpose: "any maskable" },
+            { src: icon512, sizes: "512x512", type: "image/png", purpose: "any maskable" }
+          ]
+        };
+        const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+        const link = document.createElement('link');
+        link.rel = 'manifest';
+        link.href = URL.createObjectURL(blob);
+        document.head.appendChild(link);
+      } catch (e) {
+        console.warn("PWA 環境建立略過", e);
+      }
+    }
+
+    function showNotice(msg) {
+      const modal = document.getElementById('customToastModal');
+      const textEl = document.getElementById('customToastMessage');
+      if (modal && textEl) {
+        textEl.textContent = msg;
+        modal.classList.remove('hidden');
+      }
+    }
+
+    function closeCustomToast() {
+      document.getElementById('customToastModal')?.classList.add('hidden');
+    }
+
+    function showModalFeedback(message, type = 'success') {
+      const box = document.getElementById('modalActionFeedback');
+      const icon = document.getElementById('modalFeedbackIcon');
+      const text = document.getElementById('modalFeedbackText');
+      if (!box || !icon || !text) return;
+
+      box.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-900', 'border-emerald-300', 'bg-amber-50', 'text-amber-900', 'border-amber-300', 'bg-blue-50', 'text-blue-900', 'border-blue-300');
+      if (type === 'success') {
+        box.classList.add('bg-emerald-50', 'text-emerald-900', 'border-emerald-300');
+        icon.className = "fa-solid fa-circle-check text-emerald-600 text-base mt-0.5 shrink-0";
+      } else if (type === 'info') {
+        box.classList.add('bg-blue-50', 'text-blue-900', 'border-blue-300');
+        icon.className = "fa-solid fa-circle-info text-blue-600 text-base mt-0.5 shrink-0";
+      } else {
+        box.classList.add('bg-amber-50', 'text-amber-900', 'border-amber-300');
+        icon.className = "fa-solid fa-triangle-exclamation text-amber-600 text-base mt-0.5 shrink-0";
+      }
+      text.textContent = message;
+    }
+
+    function fastCopyTextSync(text) {
+      let ok = false;
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.top = '-9999px';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        ta.setSelectionRange(0, text.length);
+        ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+      } catch (e) {
+        ok = false;
+      }
+      if (!ok && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).catch(() => {});
+        ok = true;
+      }
+      return ok;
+    }
+
+    function openShareDownloadModal(focusSection = 'share') {
+      const modal = document.getElementById('shareDownloadModal');
+      const reportBox = document.getElementById('modalReportTextarea');
+      const lineAnchor = document.getElementById('directLineAnchor');
+      const text = buildDailyLineReportText();
+
+      if (reportBox) {
+        reportBox.value = text;
+      }
+      if (lineAnchor) {
+        lineAnchor.href = `https://line.me/R/msg/text/?${encodeURIComponent(text)}`;
+      }
+      if (modal) {
+        modal.classList.remove('hidden');
+      }
+
+      const copied = fastCopyTextSync(text);
+      const hintTag = document.getElementById('autoCopyHintTag');
+      if (copied && hintTag) {
+        hintTag.textContent = "✅ 已自動複製";
+      }
+
+      if (focusSection === 'download') {
+        showModalFeedback("💡 您可將本網頁「加入手機主畫面」享受全螢幕 PWA 體驗，或點下方下載含目前資料版！", "info");
+      } else {
+        showModalFeedback("✅ 今日戰報已自動幫您複製好！現在可以直接打開手機 LINE 聊天室「貼上」，或點下方按鈕傳送！", "success");
+      }
+    }
+
+    function closeShareDownloadModal() {
+      document.getElementById('shareDownloadModal')?.classList.add('hidden');
+    }
+
+    function checkLineInAppBrowser() {
+      const ua = navigator.userAgent || "";
+      if (/Line\//i.test(ua)) {
+        document.getElementById('lineBrowserNotice')?.classList.remove('hidden');
+      }
+    }
+
+    // 產生今日「智慧體重管理」摘要文字
+    function buildDailyLineReportText() {
+      const log = appState.logs[currentSelectedDate] || { meals: [], exercises: [] };
+      const targets = calculateDailyTargets(currentSelectedDate);
+      const totals = log.meals.reduce((acc, m) => {
+        acc.cal += m.cal;
+        acc.pro += m.pro;
+        acc.fat += m.fat;
+        acc.carb += m.carb;
+        return acc;
+      }, { cal: 0, pro: 0, fat: 0, carb: 0 });
+
+      const calIn = Math.round(totals.cal);
+      const netCalAfterEx = calIn - targets.exCal;
+      const diffAfterEx = netCalAfterEx - targets.baseTargetCalIntake;
+
+      const wVal = log.weight || appState.profile.startWeight;
+      const fPctVal = log.bodyFat || appState.profile.startFat;
+      const vVal = log.visceralFat || appState.profile.startVisceral || 16;
+      const mPctVal = normalizeMusclePctValue(log.muscle || appState.profile.startMuscle, wVal);
+      const fKgVal = ((wVal * fPctVal) / 100).toFixed(1);
+      const mKgVal = ((wVal * mPctVal) / 100).toFixed(1);
+
+      return `📊【智慧體重管理 ${currentSelectedDate}】\n` +
+        `⚖️ 目前體重：${wVal.toFixed(1)}kg (目標：${targets.targetW}kg)\n` +
+        `🟡 體脂肪：${fPctVal.toFixed(1)}% (${fKgVal}kg)｜🔴 內臟脂肪：${vVal}級\n` +
+        `🟢 骨骼肌：${mPctVal.toFixed(1)}% (${mKgVal}kg)\n` +
+        `🍽️ 飲食攝取：${calIn} kcal (減重目標：${targets.baseTargetCalIntake} kcal)\n` +
+        `🏃‍♂️ 運動扣除：-${targets.exCal} kcal ➔ 運動後淨熱量：${netCalAfterEx} kcal (${diffAfterEx <= 0 ? '赤字/剩餘 ' + diffAfterEx : '超標 +' + diffAfterEx} kcal)\n` +
+        `🥩 純蛋白質：${totals.pro.toFixed(1)} / 目標 ${targets.proteinTarget}g`;
+    }
+
+    function shareDailyReportToLine() {
+      openShareDownloadModal('share');
+    }
+
+    function handleDirectLineAnchorClick() {
+      const text = buildDailyLineReportText();
+      fastCopyTextSync(text);
+      showModalFeedback("✅ 戰報已複製！若預覽視窗攔截自動開啟 LINE，請直接切換到 LINE 聊天室「貼上」即可！", "success");
+    }
+
+    async function shareSystemFileViaWebShare() {
+      const text = buildDailyLineReportText();
+      fastCopyTextSync(text);
+
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: `智慧體重管理 (${currentSelectedDate})`,
+            text: text
+          });
+          showModalFeedback("✅ 已喚起手機系統分享選單！", "success");
+          return;
+        } catch (err) {
+          if (err && err.name === 'AbortError') return;
+        }
+      }
+
+      showModalFeedback("💡 您目前的預覽視窗不支援系統分享選單，但系統已為您複製好戰報文字，請直接打開 LINE 貼上！", "info");
+    }
+
+    function copyReportTextToClipboard() {
+      const text = buildDailyLineReportText();
+      const reportBox = document.getElementById('modalReportTextarea');
+      let copied = fastCopyTextSync(text);
+
+      if (!copied && reportBox) {
+        try {
+          reportBox.select();
+          reportBox.setSelectionRange(0, 99999);
+          copied = document.execCommand('copy');
+        } catch (e) {}
+      }
+
+      const label = document.getElementById('btnCopyTextLabel');
+      if (label) {
+        label.textContent = "✅ 已複製成功！現在請打開 LINE 直接「貼上」";
+        setTimeout(() => {
+          label.textContent = "點此一鍵複製戰報（再打開 LINE 貼上）";
+        }, 3500);
+      }
+      const hintTag = document.getElementById('autoCopyHintTag');
+      if (hintTag) {
+        hintTag.textContent = "✅ 複製成功";
+      }
+
+      showModalFeedback("🎉 戰報文字複製成功！請直接切換到手機 LINE 聊天室或 Keep 筆記「長按 ➔ 貼上」即可！", "success");
+    }
+
+    function copyFullAppSourceCode() {
+      const htmlContent = buildStandaloneHTMLContent(true);
+      const ok = fastCopyTextSync(htmlContent);
+      const btnLabel = document.getElementById('btnCopySourceLabel');
+      if (btnLabel) {
+        btnLabel.textContent = "✅ 已複製完整網頁程式碼！";
+        setTimeout(() => {
+          btnLabel.textContent = "一鍵複製完整網頁程式碼";
+        }, 3500);
+      }
+      if (ok) {
+        showModalFeedback("✅ 已將「智慧體重管理」完整程式碼複製到剪貼簿！可貼到備忘錄或存成 .html 檔案獨立使用！", "success");
+      } else {
+        showModalFeedback("⚠️ 複製受限，您的資料已自動保存在本視窗中。", "warn");
+      }
+    }
+
+    function buildStandaloneHTMLContent(includeCurrentData = false) {
+      const cloneDoc = document.documentElement.cloneNode(true);
+      cloneDoc.querySelector('#shareDownloadModal')?.classList.add('hidden');
+      cloneDoc.querySelector('#customToastModal')?.classList.add('hidden');
+
+      let htmlStr = "<!DOCTYPE html>\n" + cloneDoc.outerHTML;
+      if (includeCurrentData) {
+        const preloadScript = `<script>window.__PRELOADED_FITNESS_STATE__ = ${JSON.stringify(appState)};<\/script>`;
+        htmlStr = htmlStr.replace('</head>', `${preloadScript}\n</head>`);
+      }
+      return htmlStr;
+    }
+
+    async function downloadStandaloneApp(includeCurrentData = true) {
+      try {
+        const htmlContent = buildStandaloneHTMLContent(includeCurrentData);
+        const suffix = includeCurrentData ? `含資料版_${currentSelectedDate}` : `標準版`;
+        const fileName = `智慧體重管理_${suffix}.html`;
+
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent || "");
+        if (isMobile && navigator.share && navigator.canShare) {
+          try {
+            const file = new File([htmlContent], fileName, { type: 'text/html' });
+            if (navigator.canShare({ files: [file] })) {
+              await navigator.share({
+                title: "智慧體重管理",
+                files: [file]
+              });
+              showModalFeedback(`✅ 已開啟手機存檔選單！請選擇「儲存到檔案」或直接傳給 LINE Keep 筆記。`, "success");
+              return;
+            }
+          } catch (shareErr) {
+            if (shareErr && shareErr.name === 'AbortError') return;
+          }
+        }
+
+        const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 3000);
+
+        fastCopyTextSync(htmlContent);
+
+        if (!document.getElementById('shareDownloadModal')?.classList.contains('hidden')) {
+          showModalFeedback(`💡 已送出「${fileName}」下載請求！若預覽視窗攔截下載，系統已同時幫您把「完整網頁程式碼」複製到剪貼簿了！`, "info");
+        } else {
+          openShareDownloadModal('download');
+        }
+      } catch (err) {
+        console.error("下載失敗", err);
+        showModalFeedback("⚠️ 您所在的預覽視窗禁止直接下載檔案，請點下方黑色按鈕「一鍵複製完整網頁程式碼」！", "warn");
+      }
+    }
+
+    // 輔助函式：自動判斷並將早期可能誤存為 KG (如 23.6) 的骨骼肌數值無損轉換為比率 (%)
+    function normalizeMusclePctValue(val, refWeight = 80.5) {
+      const num = parseFloat(val);
+      if (isNaN(num) || num <= 0) return 29.3;
+      // 若數值小於 25.5 且體重大於 65kg，代表該筆舊紀錄當時存到的是 kg (如 23.6kg)，自動反推回百分比 (23.6 / 80.4 * 100 = 29.3%)
+      if (num < 25.5 && refWeight > 65) {
+        return parseFloat(((num / refWeight) * 100).toFixed(1));
+      }
+      return parseFloat(num.toFixed(1));
+    }
+
+    function loadState() {
+      if (window.__PRELOADED_FITNESS_STATE__ && !localStorage.getItem(STORAGE_KEY)) {
+        appState = { ...appState, ...window.__PRELOADED_FITNESS_STATE__ };
+        saveState();
+      }
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          appState = {
+            ...appState,
+            ...parsed,
+            profile: { ...appState.profile, ...(parsed.profile || {}) },
+            customFoods: Array.isArray(parsed.customFoods) ? parsed.customFoods : [],
+            customExercises: Array.isArray(parsed.customExercises) ? parsed.customExercises : []
+          };
+          if (!appState.profile.proteinFactor || (!appState.profile.officeStandardMigrated && appState.profile.proteinFactor === 1.4)) {
+            appState.profile.proteinFactor = 1.0;
+            appState.profile.officeStandardMigrated = true;
+          }
+          if (!appState.profile.startVisceral) appState.profile.startVisceral = 17;
+          if (!appState.profile.targetVisceral) appState.profile.targetVisceral = 11;
+
+          // 自動校正個人設定與歷史紀錄中可能殘留的舊版 KG 骨骼肌數值
+          const startW = parseFloat(appState.profile.startWeight) || 83.0;
+          appState.profile.startMuscle = normalizeMusclePctValue(appState.profile.startMuscle, startW);
+          if (appState.profile.targetMuscle < 26) {
+            appState.profile.targetMuscle = 32.0;
+          }
+          Object.keys(appState.logs || {}).forEach(d => {
+            const logItem = appState.logs[d];
+            if (logItem && logItem.muscle) {
+              const w = parseFloat(logItem.weight) || startW;
+              logItem.muscle = normalizeMusclePctValue(logItem.muscle, w);
+            }
+          });
+
+          appState.profile.muscleUnitIsPercent = true;
+          saveState();
+        } catch (e) {
+          console.error("讀取歷史資料失敗", e);
+        }
+      }
+      ensureDateLogExists(currentSelectedDate);
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+    }
+
+    function ensureDateLogExists(dateStr) {
+      if (!appState.logs[dateStr]) {
+        const latestMetrics = getLatestRecordedMetrics(dateStr);
+        appState.logs[dateStr] = {
+          weight: latestMetrics.weight,
+          bodyFat: latestMetrics.bodyFat,
+          visceralFat: latestMetrics.visceralFat,
+          muscle: latestMetrics.muscle, // 儲存為骨骼肌率 (%)
+          meals: [],
+          exercises: []
+        };
+      } else if (appState.logs[dateStr].visceralFat === undefined) {
+        const latestMetrics = getLatestRecordedMetrics(dateStr);
+        appState.logs[dateStr].visceralFat = latestMetrics.visceralFat;
+      }
+    }
+
+    function getLatestRecordedMetrics(beforeDateStr) {
+      const dates = Object.keys(appState.logs).sort();
+      let w = appState.profile.startWeight;
+      let f = appState.profile.startFat;
+      let v = appState.profile.startVisceral || 17;
+      let m = appState.profile.startMuscle;
+      let latestDate = appState.profile.startDate || beforeDateStr;
+      for (const d of dates) {
+        if (d <= beforeDateStr && appState.logs[d]) {
+          if (appState.logs[d].weight) { w = appState.logs[d].weight; latestDate = d; }
+          if (appState.logs[d].bodyFat) f = appState.logs[d].bodyFat;
+          if (appState.logs[d].visceralFat) v = appState.logs[d].visceralFat;
+          if (appState.logs[d].muscle) m = normalizeMusclePctValue(appState.logs[d].muscle, w);
+        }
+      }
+      return { weight: w, bodyFat: f, visceralFat: v, muscle: m, date: latestDate };
+    }
+
+    // ================= 4. 日期與頁籤切換 =================
+    function changeDate(offsetDays) {
+      const d = new Date(currentSelectedDate);
+      d.setDate(d.getDate() + offsetDays);
+      currentSelectedDate = d.toISOString().split('T')[0];
+      document.getElementById('currentDateInput').value = currentSelectedDate;
+      ensureDateLogExists(currentSelectedDate);
+      renderAll();
+    }
+
+    function onDateChange(val) {
+      if (!val) return;
+      currentSelectedDate = val;
+      ensureDateLogExists(currentSelectedDate);
+      renderAll();
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      const targetSection = document.getElementById(tabId);
+      if (targetSection) targetSection.classList.add('active');
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('text-emerald-600');
+        btn.classList.add('text-slate-400');
+      });
+      const activeBtn = document.getElementById('nav-' + tabId);
+      if (activeBtn) {
+        activeBtn.classList.remove('text-slate-400');
+        activeBtn.classList.add('text-emerald-600');
+      }
+
+      if (tabId === 'tab-analytics') {
+        renderAnalyticsAndCharts();
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ================= 5. 生理演算法核心 =================
+    function calculateBMR(weight) {
+      const p = appState.profile;
+      const w = weight || p.targetWeight || p.startWeight;
+      if (p.gender === 'M') {
+        return Math.round(10 * w + 6.25 * p.height - 5 * p.age + 5);
+      } else {
+        return Math.round(10 * w + 6.25 * p.height - 5 * p.age - 161);
+      }
+    }
+
+    function calculateDailyTargets(dateStr) {
+      ensureDateLogExists(dateStr);
+      const log = appState.logs[dateStr];
+      const p = appState.profile;
+      const currentW = parseFloat(log.weight) || parseFloat(p.startWeight) || 80.5;
+      const targetW = parseFloat(p.targetWeight) || 73.0;
+      const startW = parseFloat(p.startWeight) || currentW;
+      const act = parseFloat(p.activity) || 1.2;
+
+      const isGoalReached = currentW <= targetW;
+
+      const targetBMR = calculateBMR(targetW);
+      const targetBaseTDEE = Math.round(targetBMR * act);
+
+      const actualBMR = calculateBMR(currentW);
+      const actualBaseTDEE = Math.round(actualBMR * act);
+
+      const exCal = (log.exercises || []).reduce((sum, item) => sum + (Number(item.calories) || 0), 0);
+      const totalOut = targetBaseTDEE + exCal;
+      const actualTotalOut = actualBaseTDEE + exCal;
+
+      const weightDiffToTarget = targetW - startW;
+      const totalCalorieGoalDiff = weightDiffToTarget * 7700;
+      const dailyRequiredDelta = isGoalReached
+        ? 0
+        : Math.round(totalCalorieGoalDiff / Math.max(1, parseInt(p.targetDays) || 90));
+
+      const baseTargetCalIntake = isGoalReached
+        ? targetBaseTDEE
+        : Math.max(targetBMR, targetBaseTDEE + dailyRequiredDelta);
+
+      const effectiveTargetWithEx = baseTargetCalIntake + exCal;
+
+      const refWeightForProtein = targetW;
+      const proFactor = parseFloat(p.proteinFactor) || 1.0;
+      const proteinTarget = Math.round(refWeightForProtein * proFactor);
+
+      const fatLimit = Math.round((baseTargetCalIntake * 0.28) / 9);
+      const carbTarget = Math.max(80, Math.round((baseTargetCalIntake - (proteinTarget * 4) - (fatLimit * 9)) / 4));
+
+      const modeDescription = isGoalReached
+        ? `已達目標體重 (${currentW}kg ≤ ${targetW}kg)：採用目標體重維持模式`
+        : `未達標 (${currentW}kg → 目標 ${targetW}kg)：依減重目標對照並額外扣除當日運動`;
+      const modeBadge = isGoalReached ? "已達標・維持期" : "減重目標＋運動扣除";
+
+      return {
+        currentW,
+        targetW,
+        isGoalReached,
+        bmr: targetBMR,
+        baseTDEE: targetBaseTDEE,
+        exCal,
+        totalOut,
+        actualTotalOut,
+        dailyRequiredDelta,
+        baseTargetCalIntake,
+        targetCalIntake: baseTargetCalIntake,
+        effectiveTargetWithEx,
+        refWeightForProtein,
+        proFactor,
+        proteinTarget,
+        fatLimit,
+        carbTarget,
+        modeDescription,
+        modeBadge
+      };
+    }
+
+    // ================= 6. 五大分類餐點選單、自訂食物入庫與搜尋邏輯 =================
+    function getAllFoodsList() {
+      const customList = (appState.customFoods || []).map(f => ({
+        ...f,
+        isCustom: true
+      }));
+      return [...customList, ...FOOD_PRESETS];
+    }
+
+    function toggleCustomFoodForm() {
+      const box = document.getElementById('customFoodCreatorBox');
+      if (!box) return;
+      box.classList.toggle('hidden');
+      renderCustomFoodManageTags();
+    }
+
+    function renderCustomFoodManageTags() {
+      const wrap = document.getElementById('customFoodManageWrap');
+      const listEl = document.getElementById('customFoodTagList');
+      if (!wrap || !listEl) return;
+      const customFoods = appState.customFoods || [];
+      if (customFoods.length === 0) {
+        wrap.classList.add('hidden');
+        return;
+      }
+      wrap.classList.remove('hidden');
+      listEl.innerHTML = customFoods.map(item => `
+        <span class="inline-flex items-center bg-white border border-emerald-300 text-emerald-900 rounded-lg px-2 py-0.5 text-[11px] font-medium shadow-sm">
+          <span>[${item.cat.replace('類','')}] ${item.name} (${item.cal}kcal)</span>
+          <button type="button" onclick="deleteCustomFoodFromLibrary(${item.customId})" class="ml-1.5 text-slate-400 hover:text-rose-500">
+            <i class="fa-solid fa-trash-can text-[10px]"></i>
+          </button>
+        </span>
+      `).join('');
+    }
+
+    function saveNewCustomFoodToLibrary() {
+      const cat = document.getElementById('newFoodCat').value || "自訂類";
+      const name = document.getElementById('newFoodName').value.trim();
+      const cal = parseFloat(document.getElementById('newFoodCal').value) || 0;
+      const pro = parseFloat(document.getElementById('newFoodPro').value) || 0;
+      const fat = parseFloat(document.getElementById('newFoodFat').value) || 0;
+      const carb = parseFloat(document.getElementById('newFoodCarb').value) || 0;
+      const vit = parseFloat(document.getElementById('newFoodVit').value) || 0;
+
+      if (!name) {
+        showNotice("請輸入新食物名稱！");
+        return;
+      }
+      if (cal <= 0 && pro <= 0 && fat <= 0 && carb <= 0) {
+        showNotice("請輸入該食物的熱量或營養素數值！");
+        return;
+      }
+
+      if (!Array.isArray(appState.customFoods)) appState.customFoods = [];
+      const newFoodItem = {
+        customId: Date.now(),
+        cat,
+        name,
+        cal: Math.round(cal),
+        pro: parseFloat(pro.toFixed(1)),
+        fat: parseFloat(fat.toFixed(1)),
+        carb: parseFloat(carb.toFixed(1)),
+        vit: Math.min(100, Math.round(vit))
+      };
+
+      appState.customFoods.unshift(newFoodItem);
+      saveState();
+
+      document.getElementById('newFoodName').value = "";
+      document.getElementById('newFoodCal').value = "";
+      document.getElementById('newFoodPro').value = "";
+      document.getElementById('newFoodFat').value = "";
+      document.getElementById('newFoodCarb').value = "";
+      document.getElementById('newFoodVit').value = "10";
+
+      selectFoodCategory(cat);
+      const sel = document.getElementById('foodPresetSelect');
+      if (sel && sel.options.length > 1) {
+        sel.value = "0";
+        onFoodPresetChange();
+      }
+      renderCustomFoodManageTags();
+      showNotice(`✅ 已將「[${cat}] ${name}」永久加入食物清單，並自動帶入下方欄位！`);
+    }
+
+    function deleteCustomFoodFromLibrary(customId) {
+      appState.customFoods = (appState.customFoods || []).filter(f => f.customId !== customId);
+      saveState();
+      initFoodPresetDropdown();
+      renderCustomFoodManageTags();
+    }
+
+    function selectFoodCategory(cat) {
+      currentFoodCategory = cat;
+      document.querySelectorAll('.cat-btn').forEach(btn => {
+        if (btn.getAttribute('data-cat') === cat) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+      initFoodPresetDropdown();
+    }
+
+    function initFoodPresetDropdown() {
+      const sel = document.getElementById('foodPresetSelect');
+      const keyword = (document.getElementById('foodSearchInput')?.value || "").trim().toLowerCase();
+      sel.innerHTML = `<option value="">-- 請點此選擇食物 (${currentFoodCategory}) --</option>`;
+
+      const allFoods = getAllFoodsList();
+      let count = 0;
+      allFoods.forEach((item, idx) => {
+        const matchCat = (
+          currentFoodCategory === "全部" ||
+          item.cat === currentFoodCategory ||
+          (currentFoodCategory === "自訂類" && item.isCustom)
+        );
+        const matchKey = (!keyword || item.name.toLowerCase().includes(keyword) || item.cat.includes(keyword));
+        if (matchCat && matchKey) {
+          const opt = document.createElement('option');
+          opt.value = idx;
+          const prefixStar = item.isCustom ? "⭐" : "";
+          opt.textContent = `${prefixStar}[${item.cat.replace('類','')}] ${item.name} — ${item.cal}kcal (純蛋白:${item.pro}g)`;
+          sel.appendChild(opt);
+          count++;
+        }
+      });
+
+      const countLabel = document.getElementById('foodFilterCount');
+      if (countLabel) countLabel.textContent = `共 ${count} 項可選`;
+
+      if (keyword && count === 1) {
+        sel.selectedIndex = 1;
+        onFoodPresetChange();
+      }
+    }
+
+    function onFoodPresetChange() {
+      const idx = document.getElementById('foodPresetSelect').value;
+      if (idx === "") return;
+      const allFoods = getAllFoodsList();
+      const item = allFoods[idx];
+      if (!item) return;
+      document.getElementById('foodName').value = `[${item.cat}] ${item.name}`;
+      document.getElementById('foodMultiplier').value = 1;
+      recalcFoodPreset();
+    }
+
+    function setMultiplier(val) {
+      document.getElementById('foodMultiplier').value = val;
+      recalcFoodPreset();
+    }
+
+    function recalcFoodPreset() {
+      const idx = document.getElementById('foodPresetSelect').value;
+      const mult = parseFloat(document.getElementById('foodMultiplier').value) || 1;
+      if (idx !== "") {
+        const allFoods = getAllFoodsList();
+        const item = allFoods[idx];
+        if (!item) return;
+        document.getElementById('foodCal').value = Math.round(item.cal * mult);
+        document.getElementById('foodPro').value = (item.pro * mult).toFixed(1);
+        document.getElementById('foodFat').value = (item.fat * mult).toFixed(1);
+        document.getElementById('foodCarb').value = (item.carb * mult).toFixed(1);
+        document.getElementById('foodVit').value = Math.min(100, Math.round(item.vit * mult));
+      }
+    }
+
+    function addMealEntry() {
+      const mealType = document.getElementById('mealType').value;
+      const name = document.getElementById('foodName').value.trim() || "自訂餐點";
+      const cal = parseFloat(document.getElementById('foodCal').value) || 0;
+      const pro = parseFloat(document.getElementById('foodPro').value) || 0;
+      const fat = parseFloat(document.getElementById('foodFat').value) || 0;
+      const carb = parseFloat(document.getElementById('foodCarb').value) || 0;
+      const vit = parseFloat(document.getElementById('foodVit').value) || 0;
+
+      if (cal <= 0 && pro <= 0 && fat <= 0 && carb <= 0) {
+        showNotice("請先從選單選擇食物，或手動輸入有效的熱量與營養素數值！");
+        return;
+      }
+
+      ensureDateLogExists(currentSelectedDate);
+      appState.logs[currentSelectedDate].meals.push({
+        id: Date.now(),
+        mealType,
+        name,
+        cal: Math.round(cal),
+        pro: parseFloat(pro.toFixed(1)),
+        fat: parseFloat(fat.toFixed(1)),
+        carb: parseFloat(carb.toFixed(1)),
+        vit: Math.round(vit)
+      });
+
+      saveState();
+      document.getElementById('foodPresetSelect').value = "";
+      document.getElementById('foodName').value = "";
+      document.getElementById('foodCal').value = "";
+      document.getElementById('foodPro').value = "";
+      document.getElementById('foodFat').value = "";
+      document.getElementById('foodCarb').value = "";
+      document.getElementById('foodVit').value = "";
+
+      renderAll();
+      showNotice(`✅ 已加入當日餐點：${name} (${Math.round(cal)} kcal)`);
+    }
+
+    function deleteMealEntry(id) {
+      const log = appState.logs[currentSelectedDate];
+      log.meals = log.meals.filter(m => m.id !== id);
+      saveState();
+      renderAll();
+    }
+
+    // ================= 7. 運動與心率消耗計算 =================
+    function toggleCustomExerciseForm() {
+      const box = document.getElementById('customExerciseCreatorBox');
+      if (!box) return;
+      box.classList.toggle('hidden');
+      renderCustomExerciseManageTags();
+    }
+
+    function renderCustomExerciseManageTags() {
+      const wrap = document.getElementById('customExManageWrap');
+      const listEl = document.getElementById('customExTagList');
+      if (!wrap || !listEl) return;
+      const customEx = appState.customExercises || [];
+      if (customEx.length === 0) {
+        wrap.classList.add('hidden');
+        return;
+      }
+      wrap.classList.remove('hidden');
+      listEl.innerHTML = customEx.map(item => `
+        <span class="inline-flex items-center bg-white border border-blue-300 text-blue-900 rounded-lg px-2 py-0.5 text-[11px] font-medium shadow-sm">
+          <span>⭐ ${item.name} (${item.baseMin}分/${item.baseCal}kcal)</span>
+          <button type="button" onclick="deleteCustomExerciseFromLibrary(${item.customId})" class="ml-1.5 text-slate-400 hover:text-rose-500">
+            <i class="fa-solid fa-trash-can text-[10px]"></i>
+          </button>
+        </span>
+      `).join('');
+    }
+
+    function initExercisePresetDropdown() {
+      const sel = document.getElementById('exType');
+      if (!sel) return;
+      sel.innerHTML = "";
+
+      const customEx = appState.customExercises || [];
+      customEx.forEach(ex => {
+        const opt = document.createElement('option');
+        opt.value = ex.name;
+        opt.setAttribute('data-custom-cal-per-min', (ex.baseCal / Math.max(1, ex.baseMin)).toFixed(4));
+        opt.setAttribute('data-base-min', ex.baseMin);
+        opt.setAttribute('data-base-cal', ex.baseCal);
+        opt.textContent = `⭐ ${ex.name} (自訂: ${ex.baseMin}分鐘 ${ex.baseCal} kcal)`;
+        sel.appendChild(opt);
+      });
+
+      DEFAULT_EXERCISE_PRESETS.forEach(ex => {
+        const opt = document.createElement('option');
+        opt.value = ex.name;
+        opt.setAttribute('data-mets', ex.mets);
+        opt.textContent = `${ex.icon} ${ex.name} (METs: ${ex.mets})`;
+        sel.appendChild(opt);
+      });
+
+      const manualOpt = document.createElement('option');
+      manualOpt.value = "__MANUAL_CUSTOM__";
+      manualOpt.setAttribute('data-manual', 'true');
+      manualOpt.textContent = "✏️ 單次自訂運動種類、時間與消耗熱量...";
+      sel.appendChild(manualOpt);
+
+      onExerciseSelectChange();
+    }
+
+    function saveNewCustomExerciseToLibrary() {
+      const name = document.getElementById('newExName').value.trim();
+      const baseMin = parseFloat(document.getElementById('newExBaseMin').value) || 30;
+      const baseCal = parseFloat(document.getElementById('newExBaseCal').value) || 0;
+
+      if (!name) {
+        showNotice("請輸入自訂運動種類名稱！");
+        return;
+      }
+      if (baseMin <= 0 || baseCal <= 0) {
+        showNotice("請輸入有效的基準時間（分鐘）與消耗熱量（kcal）！");
+        return;
+      }
+
+      if (!Array.isArray(appState.customExercises)) appState.customExercises = [];
+      appState.customExercises.unshift({
+        customId: Date.now(),
+        name,
+        baseMin: Math.round(baseMin),
+        baseCal: Math.round(baseCal)
+      });
+
+      saveState();
+      document.getElementById('newExName').value = "";
+      document.getElementById('newExBaseCal').value = "";
+
+      initExercisePresetDropdown();
+      const sel = document.getElementById('exType');
+      if (sel) {
+        sel.selectedIndex = 0;
+        document.getElementById('exDuration').value = Math.round(baseMin);
+        onExerciseSelectChange();
+      }
+      renderCustomExerciseManageTags();
+      showNotice(`✅ 已將「${name} (${baseMin}分鐘 / ${baseCal} kcal)」加入運動選單並自動套用！`);
+    }
+
+    function deleteCustomExerciseFromLibrary(customId) {
+      appState.customExercises = (appState.customExercises || []).filter(e => e.customId !== customId);
+      saveState();
+      initExercisePresetDropdown();
+      renderCustomExerciseManageTags();
+    }
+
+    function onExerciseSelectChange() {
+      const sel = document.getElementById('exType');
+      if (!sel || sel.selectedIndex < 0) return;
+      const opt = sel.options[sel.selectedIndex];
+      const nameInput = document.getElementById('exCustomNameInput');
+
+      if (opt.value === "__MANUAL_CUSTOM__") {
+        if (nameInput) {
+          nameInput.value = "";
+          nameInput.focus();
+        }
+        document.getElementById('exCalcMethodText').innerHTML = `<span class="text-blue-600 font-semibold">請自行輸入運動名稱、時間與消耗熱量(kcal)</span>`;
+        return;
+      }
+
+      if (nameInput) {
+        nameInput.value = opt.value;
+      }
+      const baseMin = opt.getAttribute('data-base-min');
+      if (baseMin) {
+        document.getElementById('exDuration').value = baseMin;
+      }
+      calculateExercisePreview();
+    }
+
+    function onManualCalorieInput() {
+      const calVal = parseFloat(document.getElementById('exCalories').value) || 0;
+      const methodLabel = document.getElementById('exCalcMethodText');
+      if (methodLabel) {
+        methodLabel.innerHTML = `<span class="text-emerald-600 font-semibold"><i class="fa-solid fa-pen-to-square mr-1"></i>已採用您手動輸入的消耗熱量 (${Math.round(calVal)} kcal)</span>`;
+      }
+    }
+
+    function calculateExercisePreview() {
+      const sel = document.getElementById('exType');
+      if (!sel || sel.selectedIndex < 0) return;
+      const selectedOpt = sel.options[sel.selectedIndex];
+
+      if (selectedOpt.value === "__MANUAL_CUSTOM__") {
+        return;
+      }
+
+      const customCalPerMin = parseFloat(selectedOpt.getAttribute('data-custom-cal-per-min')) || 0;
+      const mets = parseFloat(selectedOpt.getAttribute('data-mets')) || 6.0;
+      const duration = parseFloat(document.getElementById('exDuration').value) || 0;
+      const hr = parseFloat(document.getElementById('exHeartRate').value) || 0;
+
+      const weight = appState.profile.targetWeight || appState.profile.startWeight;
+      const age = appState.profile.age;
+      const gender = appState.profile.gender;
+
+      let burned = 0;
+      const methodLabel = document.getElementById('exCalcMethodText');
+
+      if (hr >= 85 && hr <= 220 && duration > 0) {
+        if (gender === 'M') {
+          burned = ((-55.0969 + (0.6309 * hr) + (0.1988 * weight) + (0.2017 * age)) / 4.184) * duration;
+        } else {
+          burned = ((-20.4022 + (0.4472 * hr) - (0.1263 * weight) + (0.074 * age)) / 4.184) * duration;
+        }
+        burned = Math.max(10, Math.round(burned));
+        methodLabel.innerHTML = `<span class="text-rose-500 font-semibold"><i class="fa-solid fa-heart-pulse mr-1"></i>已啟用 Keytel 心率公式 (${hr} bpm · 目標體重 ${weight}kg)</span>`;
+      } else if (customCalPerMin > 0) {
+        burned = Math.max(1, Math.round(customCalPerMin * duration));
+        methodLabel.innerHTML = `<span class="text-blue-600 font-semibold"><i class="fa-solid fa-star mr-1"></i>依您的自訂運動基準按時間比例自動換算（亦可直接手改熱量）</span>`;
+      } else {
+        burned = Math.round(mets * weight * (duration / 60) * 1.05);
+        methodLabel.textContent = `依 METs (${mets}) 與目標體重 (${weight}kg) 計算（亦可直接手改熱量）`;
+      }
+
+      document.getElementById('exCalories').value = burned;
+    }
+
+    function addExerciseEntry() {
+      const selVal = document.getElementById('exType').value;
+      const customName = (document.getElementById('exCustomNameInput')?.value || "").trim();
+      const type = customName || (selVal !== "__MANUAL_CUSTOM__" ? selVal : "自訂運動");
+      const duration = parseFloat(document.getElementById('exDuration').value) || 0;
+      const hr = parseFloat(document.getElementById('exHeartRate').value) || null;
+      const calories = parseFloat(document.getElementById('exCalories').value) || 0;
+
+      if (!type) {
+        showNotice("請輸入或選擇運動種類名稱！");
+        return;
+      }
+      if (duration <= 0 || calories <= 0) {
+        showNotice("請確認運動時間（分鐘）與消耗熱量（卡路里）皆大於 0！");
+        return;
+      }
+
+      ensureDateLogExists(currentSelectedDate);
+      appState.logs[currentSelectedDate].exercises.push({
+        id: Date.now(),
+        type,
+        duration,
+        hr,
+        calories: Math.round(calories)
+      });
+
+      saveState();
+      document.getElementById('exHeartRate').value = "";
+      calculateExercisePreview();
+      renderAll();
+      showNotice(`✅ 已加入運動紀錄：${type} (-${Math.round(calories)} kcal)\n已自動於今日攝取熱量中進行額外扣除計算！`);
+    }
+
+    function deleteExerciseEntry(id) {
+      const log = appState.logs[currentSelectedDate];
+      log.exercises = log.exercises.filter(e => e.id !== id);
+      saveState();
+      renderAll();
+    }
+
+    // ================= 8. 體組成與手機截圖智慧辨識 =================
+    function updateBodyTabLivePreview() {
+      const w = parseFloat(document.getElementById('inputWeight').value) || 0;
+      const fPct = parseFloat(document.getElementById('inputBodyFat').value) || 0;
+      const vFat = parseFloat(document.getElementById('inputVisceralFat').value) || 0;
+      const mPct = parseFloat(document.getElementById('inputMuscle').value) || 0;
+
+      document.getElementById('bodyTabFatPctDisplay').textContent = fPct > 0 ? `${fPct.toFixed(1)}%` : "--%";
+      document.getElementById('bodyTabFatKgDisplay').textContent = (w > 0 && fPct > 0) ? ((w * fPct) / 100).toFixed(1) : "--";
+
+      document.getElementById('bodyTabVisceralDisplay').textContent = vFat > 0 ? `${Math.round(vFat)} 級` : "--";
+      const vStatusEl = document.getElementById('bodyTabVisceralStatus');
+      if (vFat > 0) {
+        if (vFat <= 9) {
+          vStatusEl.textContent = "🟢 標準健康 (≤9)";
+          vStatusEl.className = "text-[10px] font-bold text-emerald-600 mt-0.5";
+        } else if (vFat <= 14) {
+          vStatusEl.textContent = "🟡 偏高注意 (10~14)";
+          vStatusEl.className = "text-[10px] font-bold text-amber-600 mt-0.5";
+        } else {
+          vStatusEl.textContent = "🔴 過高警戒 (≥15)";
+          vStatusEl.className = "text-[10px] font-bold text-rose-600 mt-0.5";
+        }
+      } else {
+        vStatusEl.textContent = "標準 ≤ 9 級";
+        vStatusEl.className = "text-[10px] font-semibold text-rose-600 mt-0.5";
+      }
+
+      document.getElementById('bodyTabMusclePctDisplay').textContent = mPct > 0 ? `${mPct.toFixed(1)}%` : "--%";
+      document.getElementById('bodyTabMuscleKgDisplay').textContent = (w > 0 && mPct > 0) ? ((w * mPct) / 100).toFixed(1) : "--";
+    }
+
+    function saveDailyBodyMetrics() {
+      const w = parseFloat(document.getElementById('inputWeight').value);
+      const fPct = parseFloat(document.getElementById('inputBodyFat').value);
+      const vFat = parseFloat(document.getElementById('inputVisceralFat').value);
+      const mPct = parseFloat(document.getElementById('inputMuscle').value);
+
+      ensureDateLogExists(currentSelectedDate);
+      if (!isNaN(w) && w > 20) appState.logs[currentSelectedDate].weight = parseFloat(w.toFixed(1));
+      if (!isNaN(fPct) && fPct > 2) appState.logs[currentSelectedDate].bodyFat = parseFloat(fPct.toFixed(1));
+      if (!isNaN(vFat) && vFat >= 1) appState.logs[currentSelectedDate].visceralFat = Math.round(vFat);
+      if (!isNaN(mPct) && mPct > 5) appState.logs[currentSelectedDate].muscle = parseFloat(mPct.toFixed(1));
+
+      saveState();
+      renderAll();
+      const fatKg = ((w * fPct) / 100).toFixed(1);
+      const musKg = ((w * mPct) / 100).toFixed(1);
+      const isReached = w <= appState.profile.targetWeight;
+      showNotice(`已儲存 ${currentSelectedDate} 的體組成數值！\n目前體重：${w.toFixed(1)}kg\n體脂率：${fPct.toFixed(1)}% (體脂重 ${fatKg}kg)\n內臟脂肪：${Math.round(vFat || 0)} 級\n骨骼肌率：${mPct.toFixed(1)}% (骨骼肌重 ${musKg}kg)\n${isReached ? '🎉 恭喜！目前已達到目標體重！' : '系統將持續以您的減重目標與目標體重計算每日建議攝取量。'}`);
+    }
+
+    function cropRegionCanvas(file, startRatioY, heightRatioY) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const targetW = 650;
+          const scale = targetW / img.width;
+          const cropY = img.height * startRatioY;
+          const cropH = img.height * heightRatioY;
+          canvas.width = targetW;
+          canvas.height = Math.round(cropH * scale);
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, cropY, img.width, cropH, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.92));
+        };
+        img.onerror = () => resolve(null);
+        img.src = URL.createObjectURL(file);
+      });
+    }
+
+    async function handleScreenshotUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const statusBox = document.getElementById('ocrStatusBox');
+      const statusText = document.getElementById('ocrStatusText');
+      const rawPreview = document.getElementById('ocrRawPreview');
+      statusBox.classList.remove('hidden');
+      rawPreview.textContent = "";
+
+      const apiKey = (appState.profile.geminiKey || "").trim();
+
+      if (apiKey) {
+        try {
+          statusText.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1.5"></i>正在透過 Gemini Vision AI 解析截圖四大區塊...`;
+          const base64Data = await fileToBase64(file);
+          const mimeType = file.type || "image/jpeg";
+          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{
+                parts: [
+                  {
+                    text: "請從這張體脂計APP截圖中精準提取四個數值：\n" +
+                          "1.『weight』(目前體重，位於第1個體重區塊，單位為 kg，例如 80.40 則取 80.4)。\n" +
+                          "2.『bodyFat』(體脂率，位於第2個體脂肪區塊左側第1個百分比 % 數值，例如 29.8；忽略右側的 24.0 kg)。\n" +
+                          "3.『visceralFat』(內臟脂肪程度，位於第3個內臟脂肪區塊的整數等級，例如 16)。\n" +
+                          "4.『muscle』(骨骼肌率，位於第4個骨骼肌區塊左側第1個百分比 % 數值，例如 29.3；請務必讀取第1個數值 29.3，絕對不要讀取右側第2個 23.6 kg)。\n" +
+                          "請只回傳純 JSON 格式，例如：{\"weight\": 80.4, \"bodyFat\": 29.8, \"visceralFat\": 16, \"muscle\": 29.3}"
+                  },
+                  { inline_data: { mime_type: mimeType, data: base64Data.split(',')[1] } }
+                ]
+              }]
+            })
+          });
+          const data = await response.json();
+          const replyText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+          const jsonMatch = replyText.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            applyExtractedMetrics(parsed.weight, parsed.bodyFat, parsed.visceralFat, parsed.muscle, "Gemini Vision AI 四大區塊辨識成功！");
+            event.target.value = "";
+            return;
+          }
+        } catch (err) {
+          console.warn("Gemini API 解析失敗，自動切換至本地 OCR 引擎", err);
+        }
+      }
+
+      try {
+        statusText.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1.5"></i>正在執行本地端 OCR 四大區塊掃描與結構分析...`;
+        const result = await Tesseract.recognize(file, 'chi_tra+eng', {
+          logger: m => {
+            if (m.status === 'recognizing text') {
+              statusText.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1.5"></i>正在解析截圖區塊數值 (${Math.round(m.progress * 100)}%)...`;
+            }
+          }
+        });
+
+        let fullText = result.data.text || "";
+
+        const [topCropUrl, midCropUrl, botCropUrl] = await Promise.all([
+          cropRegionCanvas(file, 0.15, 0.30),
+          cropRegionCanvas(file, 0.60, 0.22),
+          cropRegionCanvas(file, 0.76, 0.24)
+        ]);
+
+        let topText = "", midText = "", botText = "";
+        if (topCropUrl) {
+          const r1 = await Tesseract.recognize(topCropUrl, 'eng');
+          topText = r1?.data?.text || "";
+        }
+        if (midCropUrl) {
+          const r2 = await Tesseract.recognize(midCropUrl, 'eng');
+          midText = r2?.data?.text || "";
+        }
+        if (botCropUrl) {
+          const r3 = await Tesseract.recognize(botCropUrl, 'eng');
+          botText = r3?.data?.text || "";
+        }
+
+        rawPreview.textContent = "掃描文字摘要：" + (fullText + " | 底部骨骼肌區:" + botText).replace(/\s+/g, ' ').slice(0, 150);
+
+        const extracted = parseMetricsFromOCRText(fullText, topText, midText, botText);
+        applyExtractedMetrics(extracted.weight, extracted.bodyFat, extracted.visceralFat, extracted.muscle, "本地端四大區塊提取完成！");
+      } catch (err) {
+        statusText.innerHTML = `<span class="text-rose-400"><i class="fa-solid fa-triangle-exclamation mr-1"></i>截圖解析失敗，請手動輸入數值。</span>`;
+      } finally {
+        event.target.value = "";
+      }
+    }
+
+    function parseMetricsFromOCRText(rawText, topText = "", midText = "", botText = "") {
+      const normalizeText = (str) => (str || "")
+        .replace(/,/g, '.')
+        .replace(/\b(?:\d{4}\/)?\d{1,2}\/\d{1,2}\b/g, ' ')
+        .replace(/\b\d{1,2}:\d{2}\b/g, ' ')
+        .replace(/(\d)\s*\.\s*(\d)/g, '$1.$2');
+
+      const cleanFull = normalizeText(rawText);
+      const cleanTop = normalizeText(topText);
+      const cleanMid = normalizeText(midText);
+      const cleanBot = normalizeText(botText);
+
+      let weight = null;
+      let bodyFatPct = null;
+      let fatMassKg = null;
+      let visceralFat = null;
+      let musclePct = null;
+      let muscleMassKg = null;
+
+      const extractDecimals = (str) => {
+        if (!str) return [];
+        return [...str.matchAll(/\b(\d{1,3}\.\d{1,2})\b/g)].map(m => parseFloat(m[1]));
+      };
+
+      const findKeywordIndex = (str, regex) => {
+        const m = str.match(regex);
+        return m ? m.index : -1;
+      };
+
+      const idxFat = findKeywordIndex(cleanFull, /體脂肪|体脂肪|體脂率|脂肪率|Body\s*Fat/i);
+      const idxVisceral = findKeywordIndex(cleanFull, /內臟脂肪|内脏脂肪|內臟|Visceral|程度|等級/i);
+      const idxMuscle = findKeywordIndex(cleanFull, /骨骼肌|肌肉量|肌肉|Skeletal\s*Muscle|Muscle/i);
+
+      // 1. 第一區塊：體重
+      const weightEndIdx = idxFat !== -1 ? idxFat : (idxVisceral !== -1 ? idxVisceral : (idxMuscle !== -1 ? idxMuscle : cleanFull.length));
+      const weightSection = cleanTop + "\n" + cleanFull.slice(0, weightEndIdx);
+      const weightDecimals = extractDecimals(weightSection);
+
+      for (const val of weightDecimals) {
+        if (val >= 35 && val <= 160) {
+          weight = val;
+          break;
+        }
+      }
+      if (!weight) {
+        const fourDigitMatch = weightSection.match(/\b(\d{4})\b/);
+        if (fourDigitMatch) {
+          const v = parseInt(fourDigitMatch[1], 10) / 100;
+          if (v >= 35 && v <= 160) weight = v;
+        }
+      }
+
+      // 2. 第二區塊：體脂肪
+      if (idxFat !== -1) {
+        const fatEndIdx = idxVisceral !== -1 && idxVisceral > idxFat
+          ? idxVisceral
+          : (idxMuscle !== -1 && idxMuscle > idxFat ? idxMuscle : cleanFull.length);
+        const fatSection = cleanFull.slice(idxFat, fatEndIdx);
+        const fatDecimals = extractDecimals(fatSection).filter(v => v >= 3 && v <= 75);
+
+        if (fatDecimals.length >= 2) {
+          bodyFatPct = fatDecimals[0];
+          fatMassKg = fatDecimals[1];
+        } else if (fatDecimals.length === 1) {
+          bodyFatPct = fatDecimals[0];
+        }
+      }
+
+      // 3. 第三區塊：內臟脂肪程度
+      const visceralSearchStr = (idxVisceral !== -1
+        ? cleanFull.slice(idxVisceral, idxMuscle !== -1 && idxMuscle > idxVisceral ? idxMuscle : cleanFull.length)
+        : "") + "\n" + cleanMid;
+      const visceralNoDecimals = visceralSearchStr.replace(/\b\d+\.\d+\b/g, ' ');
+      const intMatches = [...visceralNoDecimals.matchAll(/\b(\d{1,2})\b/g)].map(m => parseInt(m[1], 10));
+      for (const v of intMatches) {
+        if (v >= 1 && v <= 30) {
+          visceralFat = v;
+          break;
+        }
+      }
+
+      // 4. 第四區塊：骨骼肌 (強制讀取第 1 個數值 % 作為骨骼肌率)
+      const musclePrimaryStr = (idxMuscle !== -1 ? cleanFull.slice(idxMuscle) : "") + "\n" + cleanBot;
+      const rawMuscleDecimals = extractDecimals(musclePrimaryStr).filter(v => v >= 8 && v <= 65);
+      const uniqueMuscleDecimals = [];
+      for (const val of rawMuscleDecimals) {
+        if (val !== bodyFatPct && val !== fatMassKg && !uniqueMuscleDecimals.includes(val)) {
+          uniqueMuscleDecimals.push(val);
+        }
+      }
+
+      if (uniqueMuscleDecimals.length >= 2) {
+        musclePct = uniqueMuscleDecimals[0];
+        muscleMassKg = uniqueMuscleDecimals[1];
+      } else if (uniqueMuscleDecimals.length === 1) {
+        musclePct = uniqueMuscleDecimals[0];
+      }
+
+      // 全圖小數序列備援
+      const allFullDecimals = extractDecimals(cleanFull + "\n" + cleanBot);
+      if (!weight) {
+        const bigW = allFullDecimals.find(v => v >= 42 && v <= 160);
+        if (bigW) weight = bigW;
+      }
+
+      const subList = [];
+      for (const v of allFullDecimals) {
+        if (v !== weight && v >= 5 && v < 45 && !subList.includes(v)) {
+          subList.push(v);
+        }
+      }
+      if (subList.length >= 4) {
+        if (!bodyFatPct) bodyFatPct = subList[0];
+        if (!fatMassKg) fatMassKg = subList[1];
+        if (!musclePct || musclePct === subList[3]) {
+          musclePct = subList[2];
+          muscleMassKg = subList[3];
+        }
+      }
+
+      // 雙區塊交集反推體重
+      if (!weight && (bodyFatPct && fatMassKg)) {
+        const rawEstW = fatMassKg / (bodyFatPct / 100);
+        let bestW = parseFloat(rawEstW.toFixed(1));
+        let minErr = 999;
+        for (let step = -5; step <= 5; step++) {
+          const candW = parseFloat((Math.round(rawEstW * 10) / 10 + step * 0.1).toFixed(1));
+          const simFatKg = parseFloat(((candW * bodyFatPct) / 100).toFixed(1));
+          const simMusKg = (musclePct && muscleMassKg) ? parseFloat(((candW * musclePct) / 100).toFixed(1)) : null;
+
+          if (simFatKg === parseFloat(fatMassKg.toFixed(1)) && (!simMusKg || simMusKg === parseFloat(muscleMassKg.toFixed(1)))) {
+            const err = Math.abs((candW * bodyFatPct) / 100 - fatMassKg);
+            if (candW < bestW || err < minErr) {
+              bestW = candW;
+              minErr = err;
+              break;
+            }
+          }
+        }
+        weight = bestW;
+      }
+
+      // 防呆保護：確保 musclePct 絕對是比率 (%) 而非重量 (kg)
+      if (musclePct && muscleMassKg) {
+        const refW = weight || 80.5;
+        if (refW < 100 && musclePct < muscleMassKg) {
+          const tmp = musclePct;
+          musclePct = muscleMassKg;
+          muscleMassKg = tmp;
+        }
+      } else if (musclePct && !muscleMassKg && weight && weight < 100) {
+        const possiblePctMatch = (cleanFull + " " + cleanBot).match(/\b(2[6-9]\.\d|3[0-5]\.\d)\b/g);
+        if (possiblePctMatch) {
+          for (const mStr of possiblePctMatch) {
+            const candPct = parseFloat(mStr);
+            if (candPct !== bodyFatPct && Math.abs((weight * candPct) / 100 - musclePct) <= 0.25) {
+              muscleMassKg = musclePct;
+              musclePct = candPct;
+              break;
+            }
+          }
+        }
+      }
+
+      return {
+        weight: weight ? parseFloat(Number(weight).toFixed(1)) : null,
+        bodyFat: bodyFatPct ? parseFloat(Number(bodyFatPct).toFixed(1)) : null,
+        visceralFat: visceralFat ? Math.round(visceralFat) : null,
+        muscle: musclePct ? parseFloat(Number(musclePct).toFixed(1)) : null
+      };
+    }
+
+    function applyExtractedMetrics(w, fPct, vFat, mPct, msg) {
+      const statusText = document.getElementById('ocrStatusText');
+      let foundCount = 0;
+      if (w !== null && w !== undefined && !isNaN(w)) {
+        document.getElementById('inputWeight').value = parseFloat(w).toFixed(1);
+        foundCount++;
+      }
+      if (fPct !== null && fPct !== undefined && !isNaN(fPct)) {
+        document.getElementById('inputBodyFat').value = parseFloat(fPct).toFixed(1);
+        foundCount++;
+      }
+      if (vFat !== null && vFat !== undefined && !isNaN(vFat)) {
+        document.getElementById('inputVisceralFat').value = Math.round(vFat);
+        foundCount++;
+      }
+      if (mPct !== null && mPct !== undefined && !isNaN(mPct)) {
+        document.getElementById('inputMuscle').value = parseFloat(mPct).toFixed(1);
+        foundCount++;
+      }
+
+      updateBodyTabLivePreview();
+
+      if (foundCount > 0) {
+        statusText.innerHTML = `<span class="text-emerald-400"><i class="fa-solid fa-circle-check mr-1"></i>${msg} (體重:${w ?? '--'}kg / 體脂率:${fPct ?? '--'}% / 內臟脂肪:${vFat ?? '--'}級 / 骨骼肌率:${mPct ?? '--'}%)</span>`;
+        saveDailyBodyMetrics();
+      } else {
+        statusText.innerHTML = `<span class="text-amber-300"><i class="fa-solid fa-circle-info mr-1"></i>未能自動對齊明確數字，請直接在下方欄位輸入微調。</span>`;
+      }
+    }
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = err => reject(err);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // ================= 9. 個人參數設定同步 =================
+    function syncProfileInputs() {
+      const p = appState.profile;
+      document.getElementById('profGender').value = p.gender;
+      document.getElementById('profAge').value = p.age;
+      document.getElementById('profHeight').value = p.height;
+      document.getElementById('profActivity').value = p.activity;
+      document.getElementById('profProteinFactor').value = p.proteinFactor || 1.0;
+      document.getElementById('profStartWeight').value = p.startWeight;
+      document.getElementById('profStartFat').value = p.startFat;
+      document.getElementById('profStartVisceral').value = p.startVisceral || 17;
+      document.getElementById('profStartMuscle').value = p.startMuscle;
+      document.getElementById('profTargetWeight').value = p.targetWeight;
+      document.getElementById('profTargetFat').value = p.targetFat;
+      document.getElementById('profTargetVisceral').value = p.targetVisceral || 11;
+      document.getElementById('profTargetMuscle').value = p.targetMuscle;
+      document.getElementById('profStartDate').value = p.startDate;
+      document.getElementById('profTargetDays').value = p.targetDays;
+      document.getElementById('profGeminiKey').value = p.geminiKey || "";
+    }
+
+    function saveProfileSettings() {
+      const p = appState.profile;
+      p.gender = document.getElementById('profGender').value;
+      p.age = parseInt(document.getElementById('profAge').value) || 46;
+      p.height = parseFloat(document.getElementById('profHeight').value) || 172;
+      p.activity = parseFloat(document.getElementById('profActivity').value) || 1.2;
+      p.proteinFactor = parseFloat(document.getElementById('profProteinFactor').value) || 1.0;
+      p.officeStandardMigrated = true;
+      p.startWeight = parseFloat(document.getElementById('profStartWeight').value) || 83.0;
+      p.startFat = parseFloat(document.getElementById('profStartFat').value) || 29.8;
+      p.startVisceral = parseInt(document.getElementById('profStartVisceral').value) || 17;
+      p.startMuscle = parseFloat(document.getElementById('profStartMuscle').value) || 29.3;
+      p.targetWeight = parseFloat(document.getElementById('profTargetWeight').value) || 73.0;
+      p.targetFat = parseFloat(document.getElementById('profTargetFat').value) || 24.0;
+      p.targetVisceral = parseInt(document.getElementById('profTargetVisceral').value) || 11;
+      p.targetMuscle = parseFloat(document.getElementById('profTargetMuscle').value) || 32.0;
+      p.startDate = document.getElementById('profStartDate').value || currentSelectedDate;
+      p.targetDays = parseInt(document.getElementById('profTargetDays').value) || 90;
+      p.geminiKey = document.getElementById('profGeminiKey').value.trim();
+
+      saveState();
+      renderAll();
+      showNotice("個人生理參數與減重目標設定已更新！");
+    }
+
+    // ================= 10. 畫面渲染與雙基底評估引擎 =================
+    function renderAll() {
+      const log = appState.logs[currentSelectedDate];
+      const targets = calculateDailyTargets(currentSelectedDate);
+
+      const curW = parseFloat(log.weight) || parseFloat(appState.profile.startWeight) || 80.5;
+      const curFatPct = parseFloat(log.bodyFat) || parseFloat(appState.profile.startFat) || 28.3;
+      const curVisceral = parseInt(log.visceralFat) || parseInt(appState.profile.startVisceral) || 16;
+      const curMusclePct = normalizeMusclePctValue(log.muscle || appState.profile.startMuscle, curW);
+
+      document.getElementById('bodyTabDateLabel').textContent = currentSelectedDate;
+      document.getElementById('inputWeight').value = log.weight ? Number(log.weight).toFixed(1) : "";
+      document.getElementById('inputBodyFat').value = log.bodyFat ? Number(log.bodyFat).toFixed(1) : "";
+      document.getElementById('inputVisceralFat').value = log.visceralFat ? Math.round(log.visceralFat) : "";
+      document.getElementById('inputMuscle').value = log.muscle ? curMusclePct.toFixed(1) : "";
+
+      updateBodyTabLivePreview();
+
+      const curFatKg = ((curW * curFatPct) / 100).toFixed(1);
+      const curMuscleKg = ((curW * curMusclePct) / 100).toFixed(1);
+
+      const targetFatPct = parseFloat(appState.profile.targetFat) || 24.0;
+      const targetFatKg = ((targets.targetW * targetFatPct) / 100).toFixed(1);
+      const targetVisceral = parseInt(appState.profile.targetVisceral) || 11;
+
+      // 更新首頁 5 格獨立體組成快照
+      document.getElementById('dashGoalWeightHint').textContent = `${targets.targetW}kg`;
+      document.getElementById('dashGoalFatPctHint').textContent = `${targetFatPct.toFixed(0)}%`;
+      document.getElementById('dashGoalFatKgHint').textContent = `${targetFatKg}kg`;
+      document.getElementById('dashGoalVisceralHint').textContent = `${targetVisceral}`;
+
+      document.getElementById('dashWeight').textContent = log.weight ? Number(log.weight).toFixed(1) : "--";
+      document.getElementById('dashBodyFat').textContent = log.bodyFat ? Number(log.bodyFat).toFixed(1) : "--";
+      document.getElementById('dashBodyFatKg').textContent = curFatKg;
+      document.getElementById('dashVisceralFat').textContent = curVisceral;
+      document.getElementById('dashMusclePct').textContent = log.muscle ? curMusclePct.toFixed(1) : "--";
+      document.getElementById('dashMuscleKg').textContent = curMuscleKg;
+
+      const modeNotice = document.getElementById('calcModeNotice');
+      const modeText = document.getElementById('calcModeText');
+      const modeSubTag = document.getElementById('calcModeSubTag');
+      modeText.innerHTML = `<i class="fa-solid fa-bullseye mr-1"></i>${targets.modeDescription}`;
+      modeSubTag.textContent = targets.modeBadge;
+
+      if (targets.isGoalReached) {
+        modeNotice.className = "mb-3 px-2.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-800 flex items-center justify-between gap-2";
+        modeSubTag.className = "font-bold text-[10px] bg-emerald-200 text-emerald-900 px-1.5 py-0.5 rounded whitespace-nowrap";
+        document.getElementById('dashTargetCalLabel').textContent = "達標維持攝取";
+      } else {
+        modeNotice.className = "mb-3 px-2.5 py-1.5 rounded-lg bg-blue-50/80 border border-blue-200 text-[11px] text-blue-800 flex items-center justify-between gap-2";
+        modeSubTag.className = "font-bold text-[10px] bg-blue-200 text-blue-900 px-1.5 py-0.5 rounded whitespace-nowrap";
+        document.getElementById('dashTargetCalLabel').textContent = "減重目標攝取";
+      }
+
+      const totals = log.meals.reduce((acc, m) => {
+        acc.cal += m.cal;
+        acc.pro += m.pro;
+        acc.fat += m.fat;
+        acc.carb += m.carb;
+        acc.vit += m.vit;
+        return acc;
+      }, { cal: 0, pro: 0, fat: 0, carb: 0, vit: 0 });
+
+      const calIn = Math.round(totals.cal);
+      const baseTarget = targets.baseTargetCalIntake;
+      const exBurn = targets.exCal;
+      const diffBeforeEx = calIn - baseTarget;
+
+      const netCalAfterEx = calIn - exBurn;
+      const diffAfterEx = netCalAfterEx - baseTarget;
+      const netCal = Math.round(calIn - targets.actualTotalOut);
+
+      document.getElementById('dashCalIn').textContent = calIn;
+      document.getElementById('dashTargetCal').textContent = baseTarget;
+      document.getElementById('dashExDeduct').textContent = exBurn;
+      document.getElementById('dashNetCalAfterEx').textContent = netCalAfterEx;
+
+      const line1El = document.getElementById('exDeductLine1');
+      const line2El = document.getElementById('exDeductLine2');
+      const deductBox = document.getElementById('exDeductionSummaryBox');
+
+      line1El.textContent = `① 飲食對照減重目標：攝取 ${calIn} - 目標 ${baseTarget} = ${diffBeforeEx > 0 ? '+' : ''}${diffBeforeEx} kcal`;
+      if (exBurn > 0) {
+        deductBox.className = "mb-3 px-3 py-2 rounded-xl bg-emerald-50/90 border border-emerald-300 text-[11px] text-emerald-950 flex items-center justify-between";
+        line2El.innerHTML = `② 額外扣除當日運動 (<b>-${exBurn} kcal</b>) 後：淨攝取 <b>${netCalAfterEx} kcal</b> (${diffAfterEx <= 0 ? `距目標尚餘 <b>${Math.abs(diffAfterEx)} kcal</b>` : `仍超出目標 <b>+${diffAfterEx} kcal</b>`})`;
+      } else {
+        deductBox.className = "mb-3 px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-[11px] text-slate-600 flex items-center justify-between";
+        line2El.innerHTML = `② 今日尚未記錄運動（扣除 0 kcal）：若有運動將自動從攝取熱量中額外扣除！`;
+      }
+
+      const balanceTag = document.getElementById('energyBalanceTag');
+      if (calIn === 0 && exBurn === 0) {
+        balanceTag.textContent = `目標攝取 ${baseTarget} kcal`;
+        balanceTag.className = "text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600";
+      } else if (diffAfterEx <= 50 && netCal < 0) {
+        balanceTag.textContent = `扣運動後距目標 ${diffAfterEx > 0 ? '+' : ''}${diffAfterEx} kcal (總赤字 ${netCal})`;
+        balanceTag.className = "text-xs font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-700";
+      } else if (diffAfterEx > 50) {
+        balanceTag.textContent = `扣運動後仍超標 +${diffAfterEx} kcal`;
+        balanceTag.className = "text-xs font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-700";
+      } else {
+        balanceTag.textContent = `扣運動後熱量平衡 (${diffAfterEx} kcal)`;
+        balanceTag.className = "text-xs font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-700";
+      }
+
+      document.getElementById('dashFatIn').textContent = totals.fat.toFixed(0);
+      document.getElementById('dashFatLimit').textContent = targets.fatLimit;
+      const estFatGramChange = (netCal * 0.8) / 7.7;
+      const fatDeltaEl = document.getElementById('dashFatDelta');
+      fatDeltaEl.textContent = `${estFatGramChange > 0 ? '+' : ''}${estFatGramChange.toFixed(1)}g`;
+      fatDeltaEl.className = estFatGramChange <= 0 ? "font-bold text-sm text-emerald-600" : "font-bold text-sm text-rose-600";
+
+      const proRatio = Math.min(100, Math.round((totals.pro / targets.proteinTarget) * 100));
+      const carbRatio = Math.min(100, Math.round((totals.carb / targets.carbTarget) * 100));
+      const vitRatio = Math.min(100, Math.round(totals.vit));
+
+      document.getElementById('dashProFormulaLabel').textContent = `辦公族標準：目標體重 ${targets.refWeightForProtein}kg × ${targets.proFactor}g`;
+      document.getElementById('dashProIn').textContent = totals.pro.toFixed(1);
+      document.getElementById('dashProTarget').textContent = targets.proteinTarget;
+      document.getElementById('barPro').style.width = `${proRatio}%`;
+
+      document.getElementById('dashCarbFormulaLabel').textContent = targets.isGoalReached ? `依目標體重維持熱量分配` : `依減重目標熱量 ${baseTarget}kcal 分配`;
+
+      const proLack = Math.max(0, targets.proteinTarget - totals.pro);
+      const hintEl = document.getElementById('proEquivalentHint');
+      if (proLack <= 0) {
+        hintEl.innerHTML = `<i class="fa-solid fa-check text-emerald-600 mr-1"></i>今日純蛋白質已達目標體重標準！（註：100g 雞胸肉約含 23g 純蛋白質）`;
+      } else {
+        const eqChicken = (proLack / 23.5).toFixed(1);
+        const eqEggs = Math.ceil(proLack / 7);
+        const eqSoy = (proLack / 13.6).toFixed(1);
+        hintEl.innerHTML = `<i class="fa-solid fa-lightbulb text-amber-500 mr-1"></i>距目標體重需求尚差 <b>${proLack.toFixed(0)}g 純蛋白質</b> ≈ 約 <b>${eqChicken} 片</b>舒肥雞胸(100g) 或 <b>${eqSoy} 瓶</b>無糖豆漿(400ml) 或 <b>${eqEggs} 顆</b>蛋`;
+      }
+
+      document.getElementById('dashCarbIn').textContent = totals.carb.toFixed(1);
+      document.getElementById('dashCarbTarget').textContent = targets.carbTarget;
+      document.getElementById('barCarb').style.width = `${carbRatio}%`;
+
+      document.getElementById('dashVitIn').textContent = vitRatio;
+      document.getElementById('barVit').style.width = `${vitRatio}%`;
+
+      const muscleDeltaEl = document.getElementById('dashMuscleDelta');
+      const muscleStatusText = document.getElementById('dashMuscleStatusText');
+      const nutBadge = document.getElementById('nutritionStatusBadge');
+
+      const hasExercise = targets.exCal >= 150;
+      const isProEnough = totals.pro >= targets.proteinTarget * 0.85;
+      const isExtremeDeficit = totals.cal < targets.bmr * 0.85;
+
+      if (totals.cal === 0) {
+        muscleDeltaEl.textContent = "待紀錄";
+        muscleDeltaEl.className = "font-bold text-sm text-slate-400";
+        muscleStatusText.textContent = "請先輸入今日餐點";
+        nutBadge.textContent = "尚未輸入餐點";
+        nutBadge.className = "text-[11px] font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-500";
+      } else if (isProEnough && hasExercise && !isExtremeDeficit) {
+        const estMuscleGain = ((totals.pro - targets.proteinTarget * 0.7) * 0.08).toFixed(1);
+        muscleDeltaEl.textContent = `+${Math.max(1.5, estMuscleGain)}g (促進合成)`;
+        muscleDeltaEl.className = "font-bold text-sm text-emerald-600";
+        muscleStatusText.textContent = "蛋白質充足 + 運動刺激";
+        nutBadge.textContent = "肌肉與代謝機能優良";
+        nutBadge.className = "text-[11px] font-medium px-2 py-0.5 rounded bg-emerald-100 text-emerald-700";
+      } else if (isProEnough && !isExtremeDeficit) {
+        muscleDeltaEl.textContent = "穩定維持";
+        muscleDeltaEl.className = "font-bold text-sm text-blue-600";
+        muscleStatusText.textContent = "蛋白質達標，成功保護肌肉";
+        nutBadge.textContent = "基礎機能正常運轉";
+        nutBadge.className = "text-[11px] font-medium px-2 py-0.5 rounded bg-blue-100 text-blue-700";
+      } else {
+        muscleDeltaEl.textContent = "流失風險 ⚠️";
+        muscleDeltaEl.className = "font-bold text-sm text-rose-600";
+        muscleStatusText.textContent = isExtremeDeficit ? "攝取低於目標基礎代謝" : "蛋白質攝取不足";
+        nutBadge.textContent = "需補充蛋白質與熱量";
+        nutBadge.className = "text-[11px] font-medium px-2 py-0.5 rounded bg-rose-100 text-rose-700";
+      }
+
+      renderDailyAlignmentBanner(totals, targets, netCalAfterEx, diffAfterEx, isProEnough, vitRatio);
+      renderMealList(log.meals);
+      renderExerciseList(log.exercises);
+      calculateExercisePreview();
+    }
+
+    function renderDailyAlignmentBanner(totals, targets, netCalAfterEx, diffAfterEx, isProEnough, vitRatio) {
+      const banner = document.getElementById('dailyStatusBanner');
+      const icon = document.getElementById('statusIcon');
+      const title = document.getElementById('statusTitle');
+      const badge = document.getElementById('statusBadge');
+      const desc = document.getElementById('statusDesc');
+
+      if (totals.cal === 0 && targets.exCal === 0) {
+        banner.className = "rounded-2xl p-4 shadow-sm border bg-slate-100 border-slate-200 text-slate-700 flex items-start space-x-3";
+        icon.innerHTML = `<i class="fa-solid fa-clipboard-list text-slate-400"></i>`;
+        title.textContent = targets.isGoalReached ? "已達目標體重：今日維持期尚未紀錄" : "今日減重目標計畫尚未開始紀錄";
+        badge.textContent = "待輸入";
+        badge.className = "text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-600";
+        desc.textContent = `依您的${targets.isGoalReached ? '目標體重維持模式' : '減重目標'}計算，今日基礎建議攝取 ${targets.baseTargetCalIntake} kcal（若有運動將額外扣除消耗），純蛋白質 ${targets.proteinTarget}g、脂肪上限 ${targets.fatLimit}g。`;
+        return;
+      }
+
+      const energyAligned = targets.isGoalReached
+        ? (diffAfterEx >= -250 && diffAfterEx <= 150)
+        : (diffAfterEx <= 100 && totals.cal >= targets.bmr * 0.85);
+      const nutritionAligned = isProEnough && vitRatio >= 60;
+
+      const exNote = targets.exCal > 0
+        ? `（飲食 ${Math.round(totals.cal)} kcal - 運動扣除 ${targets.exCal} kcal = 運動後淨攝取 ${netCalAfterEx} kcal）`
+        : `（飲食攝取 ${Math.round(totals.cal)} kcal，今日尚無運動扣除）`;
+
+      if (energyAligned && nutritionAligned) {
+        banner.className = "rounded-2xl p-4 shadow-sm border bg-emerald-950 text-white border-emerald-800 flex items-start space-x-3";
+        icon.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i>`;
+        title.textContent = targets.isGoalReached ? "目標體重維持完美達標！" : "減重目標與運動扣除雙基底達標！";
+        badge.textContent = "趨近目標 🟢";
+        badge.className = "text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40";
+        desc.textContent = `今日熱量完全符合減重目標 ${targets.baseTargetCalIntake} kcal ${exNote}，且純蛋白質 (${totals.pro.toFixed(0)}g) 充足！`;
+      } else if (energyAligned && !nutritionAligned) {
+        banner.className = "rounded-2xl p-4 shadow-sm border bg-amber-950 text-white border-amber-800 flex items-start space-x-3";
+        icon.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-400"></i>`;
+        title.textContent = "熱量扣除運動後達標，但營養基底需補強！";
+        badge.textContent = "部分趨近 🟡";
+        badge.className = "text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40";
+        const lackPro = Math.max(0, targets.proteinTarget - totals.pro).toFixed(0);
+        desc.textContent = `熱量控制在減重目標 (${targets.baseTargetCalIntake} kcal) 內 ${exNote}，但距離目標體重所需尚缺約 ${lackPro}g 純蛋白質（或蔬果維生素不足），建議補充雞胸肉、魚類或無糖豆漿。`;
+      } else {
+        banner.className = "rounded-2xl p-4 shadow-sm border bg-rose-950 text-white border-rose-800 flex items-start space-x-3";
+        icon.innerHTML = `<i class="fa-solid fa-circle-xmark text-rose-400"></i>`;
+        title.textContent = "今日攝取偏離減重目標設定";
+        badge.textContent = "遠離目標 🔴";
+        badge.className = "text-xs font-semibold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40";
+        desc.textContent = diffAfterEx > 100
+          ? `即使扣除當日運動 (${targets.exCal} kcal)，目前運動後淨熱量 (${netCalAfterEx} kcal) 仍超過減重目標 (${targets.baseTargetCalIntake} kcal) 達 +${Math.round(diffAfterEx)} kcal。建議增加有氧運動消耗或減少精緻碳水與油脂。`
+          : `今日飲食攝取 (${Math.round(totals.cal)} kcal) 低於目標體重基礎代謝安全下限 (${targets.bmr} kcal)，過度節食會導致肌肉分解，請再補充優質蛋白質與食物！`;
+      }
+    }
+
+    function renderMealList(meals) {
+      const container = document.getElementById('mealListContainer');
+      document.getElementById('foodListSummary').textContent = `共 ${meals.length} 項`;
+      if (meals.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">今日尚無餐點紀錄</p>`;
+        return;
+      }
+      container.innerHTML = meals.map(m => `
+        <div class="flex items-center justify-between bg-slate-50 rounded-xl p-2.5 border border-slate-100">
+          <div>
+            <div class="flex items-center space-x-1.5">
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">${m.mealType}</span>
+              <span class="text-xs font-bold text-slate-800">${m.name}</span>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-1">
+              <span class="font-semibold text-slate-700">${m.cal} kcal</span> · 
+              純蛋白: ${m.pro}g | 脂肪: ${m.fat}g | 碳水: ${m.carb}g | 維生素: ${m.vit}%
+            </p>
+          </div>
+          <button onclick="deleteMealEntry(${m.id})" class="text-slate-300 hover:text-rose-500 px-2 py-1">
+            <i class="fa-solid fa-trash-can text-xs"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function renderExerciseList(exercises) {
+      const container = document.getElementById('exerciseListContainer');
+      const totalMin = exercises.reduce((s, e) => s + e.duration, 0);
+      const totalExCal = exercises.reduce((s, e) => s + (Number(e.calories) || 0), 0);
+      document.getElementById('exListSummary').textContent = `共 ${totalMin} 分鐘 (額外扣除 -${totalExCal} kcal)`;
+      if (exercises.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">今日尚無運動紀錄</p>`;
+        return;
+      }
+      container.innerHTML = exercises.map(e => `
+        <div class="flex items-center justify-between bg-slate-50 rounded-xl p-2.5 border border-slate-100">
+          <div>
+            <div class="flex items-center space-x-1.5">
+              <span class="text-xs font-bold text-slate-800">${e.type}</span>
+              ${e.hr ? `<span class="text-[10px] bg-rose-100 text-rose-600 px-1.5 py-0.5 rounded font-semibold"><i class="fa-solid fa-heart-pulse mr-0.5"></i>${e.hr} bpm</span>` : ''}
+            </div>
+            <p class="text-[11px] text-slate-500 mt-0.5">時間：${e.duration} 分鐘 · 額外扣除：<span class="font-bold text-emerald-600">-${e.calories} kcal</span></p>
+          </div>
+          <button onclick="deleteExerciseEntry(${e.id})" class="text-slate-300 hover:text-rose-500 px-2 py-1">
+            <i class="fa-solid fa-trash-can text-xs"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    // ================= 11. 週結算與五大圖表繪製 (V3.6 修正骨骼肌方案A達成率邏輯) =================
+    function renderAnalyticsAndCharts() {
+      const p = appState.profile;
+      const latest = getLatestRecordedMetrics(currentSelectedDate);
+
+      const startD = new Date(p.startDate);
+      const currD = new Date(currentSelectedDate);
+      const elapsedDays = Math.max(0, Math.floor((currD - startD) / (1000 * 60 * 60 * 24)));
+      const remainDays = Math.max(0, p.targetDays - elapsedDays);
+      document.getElementById('daysRemainingBadge').textContent = `已執行 ${elapsedDays} 天 / 剩餘 ${remainDays} 天`;
+
+      const startWeightKg = parseFloat((parseFloat(p.startWeight) || 83.0).toFixed(1));
+      const currentWeightKg = parseFloat((parseFloat(latest.weight) || startWeightKg).toFixed(1));
+      const targetWeightKg = parseFloat((parseFloat(p.targetWeight) || 73.0).toFixed(1));
+
+      const startFatPct = parseFloat(p.startFat) || 29.8;
+      const currentFatPct = parseFloat(latest.bodyFat) || startFatPct;
+      const targetFatPct = parseFloat(p.targetFat) || 24.0;
+
+      // 體脂重 (kg) = 體重 (kg) × 體脂率 (%) / 100
+      const startFatKg = parseFloat(((startWeightKg * startFatPct) / 100).toFixed(1));
+      const currentFatKg = parseFloat(((currentWeightKg * currentFatPct) / 100).toFixed(1));
+      const targetFatKg = parseFloat(((targetWeightKg * targetFatPct) / 100).toFixed(1));
+
+      // 內臟脂肪等級
+      const startVisceral = parseInt(p.startVisceral) || 17;
+      const currentVisceral = parseInt(latest.visceralFat) || startVisceral;
+      const targetVisceral = parseInt(p.targetVisceral) || 11;
+
+      // 骨骼肌率 (%) 與對應重量 (kg)
+      const startMusclePct = normalizeMusclePctValue(p.startMuscle, startWeightKg);
+      const currentMusclePct = normalizeMusclePctValue(latest.muscle || startMusclePct, currentWeightKg);
+      const targetMusclePct = parseFloat(p.targetMuscle) || 32.0;
+
+      const startMuscleKg = parseFloat(((startWeightKg * startMusclePct) / 100).toFixed(1));
+      const currentMuscleKg = parseFloat(((currentWeightKg * currentMusclePct) / 100).toFixed(1));
+      const targetMuscleKg = parseFloat(((targetWeightKg * targetMusclePct) / 100).toFixed(1));
+
+      const calcProgress = (startVal, currentVal, targetVal) => {
+        if (Math.abs(targetVal - startVal) < 0.05) return 100;
+        const pct = ((currentVal - startVal) / (targetVal - startVal)) * 100;
+        return Math.max(0, Math.min(100, Math.round(pct)));
+      };
+
+      const wPct = calcProgress(startWeightKg, currentWeightKg, targetWeightKg);
+      const fPct = calcProgress(startFatKg, currentFatKg, targetFatKg);
+      const vPct = calcProgress(startVisceral, currentVisceral, targetVisceral);
+
+      // 【方案 A 實作】骨骼肌達成率：
+      // 由於減重時目標體重(如73kg)低於起始體重(如83kg)，使得目標骨骼肌重(23.4kg)低於起始骨骼肌重(24.3kg)，
+      // 若直接相減會導致分母為負數而使增肌進度歸零。
+      // 因此採用「骨骼肌率(%)成長進度」為主，並結合「目前骨骼肌KG相對於目標骨骼肌KG之保肌維持率」雙重保障：
+      let mPct = 0;
+      if (targetMusclePct > startMusclePct) {
+        mPct = calcProgress(startMusclePct, currentMusclePct, targetMusclePct);
+      } else {
+        mPct = currentMusclePct >= targetMusclePct ? 100 : Math.max(0, Math.round((currentMusclePct / targetMusclePct) * 100));
+      }
+      // 若目前骨骼肌率已達標，或已經有記錄且骨骼肌重 (如 24.9kg) 超越目標骨骼肌重 (23.4kg) 時，保底至少顯示對應的正向進度
+      if (currentMusclePct >= targetMusclePct) {
+        mPct = 100;
+      } else if (mPct === 0 && currentMuscleKg >= targetMuscleKg && currentMusclePct >= startMusclePct) {
+        // 當起始骨骼肌率恰好等於目前骨骼肌率，但肌肉重量維持高於目標值時，給予保肌維持進度顯示
+        mPct = Math.min(95, Math.max(50, Math.round((currentMusclePct / targetMusclePct) * 100)));
+      }
+
+      document.getElementById('progWeightText').textContent = `起始 ${startWeightKg.toFixed(1)}kg ➔ 目前 ${currentWeightKg.toFixed(1)}kg / 目標 ${targetWeightKg.toFixed(1)}kg`;
+      document.getElementById('progWeightPct').textContent = `${wPct}%`;
+      document.getElementById('barGoalWeight').style.width = `${wPct}%`;
+
+      document.getElementById('progFatText').textContent = `目前 ${currentFatKg.toFixed(1)}kg (${currentFatPct.toFixed(1)}%) / 目標 ${targetFatKg.toFixed(1)}kg (${targetFatPct.toFixed(1)}%)`;
+      document.getElementById('progFatPct').textContent = `${fPct}%`;
+      document.getElementById('barGoalFat').style.width = `${fPct}%`;
+
+      document.getElementById('progVisceralText').textContent = `起始 ${startVisceral}級 ➔ 目前 ${currentVisceral}級 / 目標 ≤${targetVisceral}級`;
+      document.getElementById('progVisceralPct').textContent = `${vPct}%`;
+      document.getElementById('barGoalVisceral').style.width = `${vPct}%`;
+
+      document.getElementById('progMuscleText').textContent = `起始 ${startMusclePct.toFixed(1)}% ➔ 目前 ${currentMusclePct.toFixed(1)}% (${currentMuscleKg.toFixed(1)}kg) / 目標 ${targetMusclePct.toFixed(1)}% (${targetMuscleKg.toFixed(1)}kg)`;
+      document.getElementById('progMusclePct').textContent = `${mPct}%`;
+      document.getElementById('barGoalMuscle').style.width = `${mPct}%`;
+
+      let netCal7Days = 0;
+      let proHitDays = 0;
+      let totalExCal7Days = 0;
+      let activeDays = 0;
+
+      const last7Dates = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(currentSelectedDate);
+        d.setDate(d.getDate() - i);
+        const dStr = d.toISOString().split('T')[0];
+        last7Dates.push(dStr);
+        ensureDateLogExists(dStr);
+
+        const dLog = appState.logs[dStr];
+        const dTargets = calculateDailyTargets(dStr);
+        const dCalIn = dLog.meals.reduce((s, m) => s + m.cal, 0);
+        const dProIn = dLog.meals.reduce((s, m) => s + m.pro, 0);
+        totalExCal7Days += dTargets.exCal;
+
+        if (dCalIn > 0 || dTargets.exCal > 0) {
+          activeDays++;
+          netCal7Days += (dCalIn - dTargets.actualTotalOut);
+          if (dProIn >= dTargets.proteinTarget * 0.85) proHitDays++;
+        }
+      }
+
+      document.getElementById('weeklyNetCal').textContent = `${netCal7Days > 0 ? '+' : ''}${Math.round(netCal7Days)} kcal`;
+      const theoKg = (netCal7Days / 7700).toFixed(2);
+      document.getElementById('weeklyTheoWeight').textContent = `理論折合體組織 ${theoKg > 0 ? '+' : ''}${theoKg} kg`;
+      document.getElementById('weeklyProDays').textContent = `${proHitDays} / ${Math.max(1, activeDays)} 紀錄天`;
+      document.getElementById('weeklyExerciseTotal').textContent = `運動累計扣除 -${totalExCal7Days} kcal`;
+
+      const overallGoalRate = Math.round((wPct * 0.3) + (fPct * 0.35) + (vPct * 0.15) + (mPct * 0.2));
+      document.getElementById('weeklyOverallScore').textContent = `綜合達成率 ${overallGoalRate}%`;
+
+      const adviceEl = document.getElementById('weeklyAdviceText');
+      if (activeDays === 0) {
+        adviceEl.textContent = "本週尚無足夠飲食與運動紀錄，持續記錄 3 天以上即可獲得精準的週結算回饋！";
+      } else {
+        adviceEl.textContent = `【週結算評估】過去 ${activeDays} 個紀錄日中，累計運動額外扣除 ${totalExCal7Days} kcal，總熱量淨收支為 ${Math.round(netCal7Days)} kcal。目前體脂率 ${currentFatPct.toFixed(1)}%（體脂重 ${currentFatKg.toFixed(1)}kg，達成率 ${fPct}%）、內臟脂肪 ${currentVisceral} 級（達成率 ${vPct}%）、骨骼肌率 ${currentMusclePct.toFixed(1)}%（骨骼肌重 ${currentMuscleKg.toFixed(1)}kg，達成率 ${mPct}%）。`;
+      }
+
+      const chartDates = last7Dates;
+      const shortLabels = chartDates.map(d => d.slice(5));
+      const weightsKg = chartDates.map(d => appState.logs[d]?.weight ? parseFloat(Number(appState.logs[d].weight).toFixed(1)) : null);
+      const targetWeightsLine = chartDates.map(() => targetWeightKg);
+
+      const fatMassesKg = chartDates.map(d => {
+        const w = appState.logs[d]?.weight;
+        const f = appState.logs[d]?.bodyFat;
+        return (w && f) ? parseFloat(((w * f) / 100).toFixed(1)) : null;
+      });
+      const musclesKg = chartDates.map(d => {
+        const w = appState.logs[d]?.weight;
+        const mRaw = appState.logs[d]?.muscle;
+        if (!w || !mRaw) return null;
+        const mPctVal = normalizeMusclePctValue(mRaw, w);
+        return parseFloat(((w * mPctVal) / 100).toFixed(1));
+      });
+
+      const visceralLevels = chartDates.map(d => appState.logs[d]?.visceralFat ? Math.round(Number(appState.logs[d].visceralFat)) : null);
+      const targetVisceralLine = chartDates.map(() => targetVisceral);
+
+      // 1. 繪製【體重歷史趨勢圖 (獨立圖表, 單位: kg)】
+      const ctxWeight = document.getElementById('weightChartCanvas').getContext('2d');
+      if (weightChartInstance) weightChartInstance.destroy();
+      weightChartInstance = new Chart(ctxWeight, {
+        type: 'line',
+        data: {
+          labels: shortLabels,
+          datasets: [
+            {
+              label: '目前體重 (kg)',
+              data: weightsKg,
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(59, 130, 246, 0.12)',
+              fill: true,
+              tension: 0.3,
+              pointRadius: 4,
+              spanGaps: true
+            },
+            {
+              label: '目標體重 (kg)',
+              data: targetWeightsLine,
+              borderColor: '#94a3b8',
+              borderDash: [5, 5],
+              pointRadius: 0,
+              fill: false,
+              tension: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { font: { size: 11 } } },
+            tooltip: {
+              callbacks: {
+                label: ctx => `${ctx.dataset.label}: ${Number(ctx.parsed.y).toFixed(1)} kg`
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { font: { size: 10 } } },
+            y: {
+              ticks: {
+                font: { size: 10 },
+                callback: v => Number(v).toFixed(1) + ' kg'
+              },
+              suggestedMin: Math.min(...weightsKg.filter(Boolean), targetWeightKg) - 1.5,
+              suggestedMax: Math.max(...weightsKg.filter(Boolean), startWeightKg) + 1.0
+            }
+          }
+        }
+      });
+
+      // 2. 繪製【體脂重 (kg) 與 骨骼肌重 (kg) 歷史趨勢圖】
+      const ctxFatMuscle = document.getElementById('fatMuscleChartCanvas').getContext('2d');
+      if (fatMuscleChartInstance) fatMuscleChartInstance.destroy();
+      fatMuscleChartInstance = new Chart(ctxFatMuscle, {
+        type: 'line',
+        data: {
+          labels: shortLabels,
+          datasets: [
+            {
+              label: '骨骼肌重 (kg)',
+              data: musclesKg,
+              borderColor: '#10b981',
+              backgroundColor: '#10b981',
+              tension: 0.3,
+              pointRadius: 4,
+              spanGaps: true
+            },
+            {
+              label: '體脂重 (kg)',
+              data: fatMassesKg,
+              borderColor: '#f59e0b',
+              backgroundColor: '#f59e0b',
+              tension: 0.3,
+              pointRadius: 4,
+              spanGaps: true
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { font: { size: 11 } } },
+            tooltip: {
+              callbacks: {
+                label: ctx => `${ctx.dataset.label}: ${Number(ctx.parsed.y).toFixed(1)} kg`
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { font: { size: 10 } } },
+            y: {
+              ticks: {
+                font: { size: 10 },
+                callback: v => Number(v).toFixed(1) + ' kg'
+              }
+            }
+          }
+        }
+      });
+
+      // 3. 繪製【內臟脂肪等級 獨立歷史趨勢折線圖】
+      const ctxVisceral = document.getElementById('visceralChartCanvas').getContext('2d');
+      if (visceralChartInstance) visceralChartInstance.destroy();
+      visceralChartInstance = new Chart(ctxVisceral, {
+        type: 'line',
+        data: {
+          labels: shortLabels,
+          datasets: [
+            {
+              label: '內臟脂肪 (等級)',
+              data: visceralLevels,
+              borderColor: '#f43f5e',
+              backgroundColor: 'rgba(244, 63, 94, 0.12)',
+              fill: true,
+              tension: 0.3,
+              pointRadius: 4,
+              spanGaps: true
+            },
+            {
+              label: `目標標準線 (≤${targetVisceral}級)`,
+              data: targetVisceralLine,
+              borderColor: '#10b981',
+              borderDash: [5, 5],
+              pointRadius: 0,
+              fill: false,
+              tension: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { font: { size: 11 } } },
+            tooltip: {
+              callbacks: {
+                label: ctx => `${ctx.dataset.label}: ${Math.round(ctx.parsed.y)} 級`
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { font: { size: 10 } } },
+            y: {
+              ticks: {
+                stepSize: 1,
+                font: { size: 10 },
+                callback: v => Math.round(v) + ' 級'
+              },
+              suggestedMin: Math.max(1, Math.min(...visceralLevels.filter(Boolean), targetVisceral) - 2),
+              suggestedMax: Math.max(...visceralLevels.filter(Boolean), startVisceral) + 2
+            }
+          }
+        }
+      });
+
+      // 4. 繪製【最新身體組成圓餅圖】
+      const otherMassKg = Math.max(0.1, parseFloat((currentWeightKg - currentMuscleKg - currentFatKg).toFixed(1)));
+      const otherSharePct = Math.max(0.1, (100 - currentMusclePct - currentFatPct)).toFixed(1);
+
+      document.getElementById('pieChartDateLabel').textContent = latest.date || currentSelectedDate;
+      document.getElementById('pieTotalWeightBadge').textContent = `總重 ${currentWeightKg.toFixed(1)} kg`;
+      document.getElementById('pieMuscleStat').textContent = `${currentMusclePct.toFixed(1)}% (${currentMuscleKg.toFixed(1)}kg)`;
+      document.getElementById('pieFatStat').textContent = `${currentFatPct.toFixed(1)}% (${currentFatKg.toFixed(1)}kg)`;
+      document.getElementById('pieOtherStat').textContent = `${otherSharePct}% (${otherMassKg.toFixed(1)}kg)`;
+
+      const ctxPie = document.getElementById('bodyCompositionPieCanvas').getContext('2d');
+      if (bodyCompPieChartInstance) bodyCompPieChartInstance.destroy();
+      bodyCompPieChartInstance = new Chart(ctxPie, {
+        type: 'doughnut',
+        data: {
+          labels: [
+            `骨骼肌 (${currentMusclePct.toFixed(1)}% / ${currentMuscleKg.toFixed(1)} kg)`,
+            `體脂肪 (${currentFatPct.toFixed(1)}% / ${currentFatKg.toFixed(1)} kg)`,
+            `其他組織 (${otherSharePct}% / ${otherMassKg.toFixed(1)} kg)`
+          ],
+          datasets: [{
+            data: [
+              parseFloat(currentMuscleKg.toFixed(1)),
+              parseFloat(currentFatKg.toFixed(1)),
+              parseFloat(otherMassKg.toFixed(1))
+            ],
+            backgroundColor: ['#10b981', '#f59e0b', '#94a3b8'],
+            borderColor: '#ffffff',
+            borderWidth: 2,
+            hoverOffset: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '52%',
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { font: { size: 11 }, padding: 10 }
+            },
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  const val = Number(ctx.parsed);
+                  const pct = ((val / currentWeightKg) * 100).toFixed(1);
+                  return ` ${val.toFixed(1)} kg (佔總體重 ${pct}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // 5. 繪製【每日運動後淨熱量扣除減重目標攝取：赤字/剩餘 vs 超標 直條圖】
+      const energyDiffs = chartDates.map(d => {
+        const cIn = appState.logs[d]?.meals.reduce((s, m) => s + m.cal, 0) || 0;
+        const tObj = calculateDailyTargets(d);
+        if (cIn === 0 && tObj.exCal === 0) return 0;
+        const netAfterEx = cIn - tObj.exCal;
+        return Math.round(netAfterEx - tObj.baseTargetCalIntake);
+      });
+
+      const barColors = energyDiffs.map(val => {
+        if (val < 0) return '#10b981'; // 負數：赤字/有剩餘額度 (翠綠色)
+        if (val > 0) return '#f43f5e'; // 正數：超出減重目標 (玫瑰紅)
+        return '#94a3b8';              // 0：無紀錄或剛好平衡
+      });
+
+      const ctxEnergy = document.getElementById('energyChartCanvas').getContext('2d');
+      if (energyChartInstance) energyChartInstance.destroy();
+      energyChartInstance = new Chart(ctxEnergy, {
+        type: 'bar',
+        data: {
+          labels: shortLabels,
+          datasets: [
+            {
+              label: '運動後淨熱量 - 減重目標 (負值🟢=赤字/剩餘，正值🔴=超標)',
+              data: energyDiffs,
+              backgroundColor: barColors,
+              borderRadius: 5
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { font: { size: 10 } } },
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  const dStr = chartDates[ctx.dataIndex];
+                  const cIn = Math.round(appState.logs[dStr]?.meals.reduce((s, m) => s + m.cal, 0) || 0);
+                  const tObj = calculateDailyTargets(dStr);
+                  const netAfterEx = cIn - tObj.exCal;
+                  const diff = ctx.parsed.y;
+                  if (cIn === 0 && tObj.exCal === 0) return " 當日尚無飲食與運動紀錄";
+                  const statusStr = diff <= 0
+                    ? `🟢 赤字/尚有餘額 ${diff} kcal (距目標還可吃 ${Math.abs(diff)} kcal)`
+                    : `🔴 超出減重目標 +${diff} kcal`;
+                  return [
+                    statusStr,
+                    `明細：(飲食 ${cIn} - 運動 ${tObj.exCal} = 淨熱量 ${netAfterEx}) - 目標 ${tObj.baseTargetCalIntake} kcal`
+                  ];
+                }
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { font: { size: 10 } } },
+            y: {
+              grid: {
+                color: ctx => (ctx.tick.value === 0 ? '#334155' : '#e2e8f0'),
+                lineWidth: ctx => (ctx.tick.value === 0 ? 1.5 : 1)
+              },
+              ticks: {
+                font: { size: 10 },
+                callback: v => (v > 0 ? `+${v}` : v) + ' kcal'
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // ================= 12. 匯出與匯入備份 =================
+    function exportDataJSON() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+      const dlAnchor = document.createElement('a');
+      dlAnchor.setAttribute("href", dataStr);
+      dlAnchor.setAttribute("download", `fitness_tracker_backup_${currentSelectedDate}.json`);
+      document.body.appendChild(dlAnchor);
+      dlAnchor.click();
+      dlAnchor.remove();
+    }
+
+    function importDataJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (imported.profile && imported.logs) {
+            appState = imported;
+            saveState();
+            loadState();
+            syncProfileInputs();
+            renderAll();
+            renderAnalyticsAndCharts();
+            showNotice("歷史紀錄還原成功！");
+          } else {
+            showNotice("檔案格式不符！");
+          }
+        } catch (err) {
+          showNotice("讀取 JSON 失敗！");
+        }
+      };
+      reader.readAsText(file);
+    }
+  </script>
+
+</body></html>
