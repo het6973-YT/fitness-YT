@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="智慧體重管理">
   <meta name="theme-color" content="#0f172a">
-  <title>智慧體重管理 V3.6 PWA</title>
+  <title>智慧體重管理 V3.7｜操作體驗優化</title>
   
   <!-- LINE 與社群分享預覽標籤 (Open Graph) -->
   <meta property="og:title" content="智慧體重管理 V3.6 PWA">
@@ -59,6 +59,45 @@
       background-color: #05b34c;
     }
   </style>
+<style id="v37Styles">
+    /* V3.7 touch-first typography: priority metrics are large; helper text stays legible. */
+    #tab-dashboard #dashCalIn, #tab-dashboard #dashTargetCal, #tab-dashboard #dashExDeduct,
+    #tab-dashboard #dashNetCalAfterEx {font-size:clamp(16px,4.3vw,22px);line-height:1.35;letter-spacing:-.4px;}
+    #tab-dashboard #dashWeight,#tab-dashboard #dashBodyFat,#tab-dashboard #dashBodyFatKg,
+    #tab-dashboard #dashVisceralFat,#tab-dashboard #dashMusclePct {font-size:clamp(14px,3.75vw,19px);line-height:1.35;}
+    #tab-dashboard #dashFatDelta,#tab-dashboard #dashMuscleDelta {font-size:18px;}
+    main .text-\[9px\] {font-size:11px!important;line-height:1.5;}
+    main .text-\[10px\] {font-size:12px!important;line-height:1.5;}
+    main .text-\[11px\] {font-size:13px!important;line-height:1.5;}
+    main .text-xs {font-size:13px;line-height:1.5;}
+    main h3 {line-height:1.5;}
+    #customToastModal {z-index:220!important;}
+    .nav-btn span {font-size:11px!important;}
+    .v37-help-btn {display:inline-flex;align-items:center;justify-content:center;min-width:27px;height:27px;margin-left:4px;border:1px solid #94a3b8;border-radius:50%;font-size:15px;font-weight:700;color:#475569;background:#fff;vertical-align:middle;cursor:pointer;flex-shrink:0;}
+    .v37-help-btn:focus-visible,.v37-avatar-btn:focus-visible,.v37-action:focus-visible {outline:3px solid #10b981;outline-offset:2px;}
+    .v37-avatar-btn {display:flex;align-items:center;justify-content:center;border:2px solid #34d399;color:white;background:#334155;width:35px;height:35px;border-radius:50%;overflow:hidden;}
+    .v37-avatar-btn img {height:100%;width:100%;object-fit:cover;}
+    .v37-screen {position:fixed;inset:0;z-index:150;background:rgba(15,23,42,.82);display:flex;justify-content:center;align-items:center;padding:16px;overflow-y:auto;}
+    .v37-screen.v37-hidden {display:none!important;}
+    .v37-panel {width:100%;max-width:480px;background:#fff;border-radius:20px;padding:20px;max-height:calc(100vh - 30px);overflow-y:auto;box-shadow:0 14px 55px rgba(0,0,0,.25);}
+    .v37-heading {font-size:21px;font-weight:800;color:#0f172a;line-height:1.45;}
+    .v37-muted {color:#64748b;font-size:13px;line-height:1.65;}
+    .v37-grid {display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .v37-field {display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:650;color:#475569;}
+    .v37-field input,.v37-field select {width:100%;min-height:43px;border-radius:10px;border:1px solid #cbd5e1;padding:10px;background:white;font-size:16px;color:#0f172a;}
+    .v37-field input:focus,.v37-field select:focus {outline:2px solid #059669;outline-offset:1px;}
+    .v37-primary {background:#059669;color:white;padding:12px 15px;border-radius:12px;font-size:15px;font-weight:750;min-height:44px;}
+    .v37-secondary {border:1px solid #cbd5e1;color:#334155;padding:11px 15px;border-radius:12px;font-size:14px;font-weight:650;min-height:44px;background:#fff;}
+    .v37-danger {background:#991b1b;color:#fff;padding:12px 15px;border-radius:12px;font-weight:750;}
+    .v37-action-row {display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:18px;flex-wrap:wrap;}
+    .v37-stepbar {display:flex;gap:6px;margin:12px 0 18px;}
+    .v37-stepbar span {height:6px;border-radius:10px;flex:1;background:#e2e8f0;}
+    .v37-stepbar span.active {background:#059669;}
+    .v37-backup-status {font-size:13px;padding:10px 12px;border-radius:10px;background:#f0fdf4;color:#065f46;line-height:1.55;}
+    .v37-alert {font-size:13px;color:#9f1239;padding:10px;border-radius:10px;background:#fff1f2;line-height:1.55;}
+    .v37-note {padding:10px 12px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;font-size:13px;line-height:1.6;color:#334155;}
+    .v37-hidden-section {display:none!important;}
+  </style>
 </head>
 <body class="text-slate-800">
 
@@ -68,10 +107,11 @@
       <div class="flex items-center space-x-1.5 min-w-0">
         <i class="fa-solid fa-bolt text-emerald-400 text-lg shrink-0"></i>
         <h1 class="font-bold text-sm tracking-wide truncate">智慧體重管理</h1>
-        <span class="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded font-semibold shrink-0">V3.6 PWA</span>
+        <span class="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded font-semibold shrink-0">V3.7</span>
       </div>
       
       <div class="flex items-center space-x-1.5 shrink-0">
+        <button type="button" id="v37AvatarHeader" onclick="v37OpenProfile()" aria-label="開啟個人資料" title="個人資料" class="v37-avatar-btn shrink-0"><i class="fa-solid fa-user"></i></button>
         <!-- 日期選擇器 -->
         <div class="flex items-center bg-slate-800 rounded-lg px-1.5 py-1 border border-slate-700">
           <button onclick="changeDate(-1)" class="text-slate-400 hover:text-white px-1"><i class="fa-solid fa-chevron-left text-[10px]"></i></button>
@@ -136,7 +176,7 @@
             <h2 id="statusTitle" class="font-bold text-base">今日減重目標計畫尚未開始紀錄</h2>
             <span id="statusBadge" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-600">待輸入</span>
           </div>
-          <p id="statusDesc" class="text-xs mt-1 leading-relaxed opacity-90">依您的減重目標計算，今日建議攝取 1555 kcal，純蛋白質 73g、脂肪上限 48g。</p>
+          <p id="statusDesc" class="text-xs mt-1 leading-relaxed opacity-90">依您設定的減重目標計算每日熱量與營養素建議。</p>
         </div>
       </div>
 
@@ -145,13 +185,13 @@
         <div class="flex items-center justify-between mb-2">
           <h3 class="font-bold text-sm text-slate-700 flex items-center">
             <span class="w-2 h-4 bg-blue-500 rounded-sm mr-2"></span>能量基底：攝取對照與運動額外扣除
-          </h3>
-          <span id="energyBalanceTag" class="text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600">目標攝取 1555 kcal</span>
+           <button type="button" class="v37-help-btn" aria-label="說明：能量基底與熱量收支" onclick="v37ShowHelp('能量基底與熱量收支')">?</button></h3>
+          <span id="energyBalanceTag" class="text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600">目標攝取 -- kcal</span>
         </div>
 
         <!-- 顯示目前熱量與營養素計算模式說明 -->
         <div id="calcModeNotice" class="mb-3 px-2.5 py-1.5 rounded-lg bg-blue-50/80 border border-blue-200 text-[11px] text-blue-800 flex items-center justify-between gap-2">
-          <span id="calcModeText"><i class="fa-solid fa-bullseye mr-1"></i>未達標 (80.5kg → 目標 73kg)：依減重目標與目標體重計算每日攝取</span>
+          <span id="calcModeText"><i class="fa-solid fa-bullseye mr-1"></i>依減重目標與目標體重計算每日攝取</span>
           <span id="calcModeSubTag" class="font-bold text-[10px] bg-blue-200 text-blue-900 px-1.5 py-0.5 rounded whitespace-nowrap">減重目標＋運動扣除</span>
         </div>
 
@@ -163,7 +203,7 @@
           </div>
           <div class="border-l border-slate-200">
             <p class="text-[10px] text-slate-400" id="dashTargetCalLabel">減重目標攝取</p>
-            <p class="font-bold text-sm text-blue-600"><span id="dashTargetCal">1555</span> <span class="text-[9px] font-normal">kcal</span></p>
+            <p class="font-bold text-sm text-blue-600"><span id="dashTargetCal">--</span> <span class="text-[9px] font-normal">kcal</span></p>
           </div>
           <div class="border-l border-slate-200">
             <p class="text-[10px] text-emerald-600 font-semibold">運動額外扣除</p>
@@ -178,7 +218,7 @@
         <!-- 當日運動額外扣除對照結算說明列 -->
         <div id="exDeductionSummaryBox" class="mb-3 px-3 py-2 rounded-xl bg-emerald-50/70 border border-emerald-200 text-[11px] text-emerald-900 flex items-center justify-between">
           <div class="space-y-0.5">
-            <p id="exDeductLine1" class="font-semibold text-slate-700">① 飲食對照減重目標：攝取 0 - 目標 1555 = -1555 kcal</p>
+            <p id="exDeductLine1" class="font-semibold text-slate-700">① 飲食與減重目標對照：等待系統計算</p>
             <p id="exDeductLine2" class="font-bold text-emerald-700">② 今日尚未記錄運動（扣除 0 kcal）：若有運動將自動從攝取熱量中額外扣除！</p>
           </div>
           <button onclick="switchTab('tab-exercise')" class="shrink-0 ml-2 bg-white hover:bg-emerald-100 text-emerald-700 border border-emerald-300 px-2 py-1 rounded-lg text-[10px] font-bold shadow-sm">
@@ -217,7 +257,7 @@
         <div class="flex items-center justify-between">
           <h3 class="font-bold text-sm text-slate-700 flex items-center">
             <span class="w-2 h-4 bg-emerald-500 rounded-sm mr-2"></span>營養基底：依減重目標計算攝取量
-          </h3>
+           <button type="button" class="v37-help-btn" aria-label="說明：營養基底的計算" onclick="v37ShowHelp('營養基底的計算')">?</button></h3>
           <span id="nutritionStatusBadge" class="text-[11px] font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-500">尚未輸入餐點</span>
         </div>
 
@@ -227,7 +267,7 @@
             <span class="font-medium text-slate-600">
               <i class="fa-solid fa-drumstick-bite text-emerald-500 mr-1"></i>純蛋白質 (<span id="dashProFormulaLabel">辦公族標準：目標體重 73kg × 1g</span>)
             </span>
-            <span class="font-bold text-slate-700"><span id="dashProIn">0.0</span> / <span id="dashProTarget">73</span> g</span>
+            <span class="font-bold text-slate-700"><span id="dashProIn">0.0</span> / <span id="dashProTarget">70</span> g</span>
           </div>
           <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
             <div id="barPro" class="bg-emerald-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
@@ -263,7 +303,7 @@
         <div class="flex items-center justify-between mb-2.5">
           <h3 class="font-bold text-sm text-slate-700 flex items-center">
             <span class="w-2 h-4 bg-purple-500 rounded-sm mr-2"></span>當日量測體組成 (體脂/內臟脂肪/骨骼肌獨立呈現)
-          </h3>
+           <button type="button" class="v37-help-btn" aria-label="說明：身體組成數據" onclick="v37ShowHelp('身體組成數據')">?</button></h3>
           <button onclick="switchTab('tab-body')" class="text-xs text-blue-600 font-medium flex items-center">
             <i class="fa-solid fa-camera mr-1"></i>截圖辨識 / 修改
           </button>
@@ -271,28 +311,28 @@
         <div class="grid grid-cols-5 gap-1 text-center pt-1">
           <div class="bg-slate-50 p-1.5 rounded-xl border border-slate-100">
             <p class="text-[10px] text-slate-400">目前體重</p>
-            <p class="font-bold text-xs text-slate-800 mt-0.5"><span id="dashWeight">80.5</span><span class="text-[9px] font-normal">kg</span></p>
-            <p class="text-[9px] text-slate-400 mt-0.5">目標<span id="dashGoalWeightHint">73</span></p>
+            <p class="font-bold text-xs text-slate-800 mt-0.5"><span id="dashWeight">75.0</span><span class="text-[9px] font-normal">kg</span></p>
+            <p class="text-[9px] text-slate-400 mt-0.5">目標<span id="dashGoalWeightHint">70</span></p>
           </div>
           <div class="bg-amber-50/70 p-1.5 rounded-xl border border-amber-200/80">
             <p class="text-[10px] text-amber-700 font-semibold">體脂率</p>
-            <p class="font-bold text-xs text-amber-600 mt-0.5"><span id="dashBodyFat">28.3</span><span class="text-[9px] font-normal">%</span></p>
-            <p class="text-[9px] text-amber-600/80 mt-0.5">目標<span id="dashGoalFatPctHint">24%</span></p>
+            <p class="font-bold text-xs text-amber-600 mt-0.5"><span id="dashBodyFat">25.0</span><span class="text-[9px] font-normal">%</span></p>
+            <p class="text-[9px] text-amber-600/80 mt-0.5">目標<span id="dashGoalFatPctHint">22%</span></p>
           </div>
           <div class="bg-amber-50/40 p-1.5 rounded-xl border border-amber-100">
             <p class="text-[10px] text-amber-800 font-semibold">體脂重</p>
-            <p class="font-bold text-xs text-amber-700 mt-0.5"><span id="dashBodyFatKg">22.8</span><span class="text-[9px] font-normal">kg</span></p>
-            <p class="text-[9px] text-amber-600/80 mt-0.5">目標<span id="dashGoalFatKgHint">17.5</span></p>
+            <p class="font-bold text-xs text-amber-700 mt-0.5"><span id="dashBodyFatKg">18.8</span><span class="text-[9px] font-normal">kg</span></p>
+            <p class="text-[9px] text-amber-600/80 mt-0.5">目標<span id="dashGoalFatKgHint">15.4</span></p>
           </div>
           <div class="bg-rose-50/60 p-1.5 rounded-xl border border-rose-200/80">
             <p class="text-[10px] text-rose-700 font-semibold">內臟脂肪</p>
-            <p class="font-bold text-xs text-rose-600 mt-0.5"><span id="dashVisceralFat">16</span><span class="text-[9px] font-normal">級</span></p>
+            <p class="font-bold text-xs text-rose-600 mt-0.5"><span id="dashVisceralFat">10</span><span class="text-[9px] font-normal">級</span></p>
             <p class="text-[9px] text-rose-600/80 mt-0.5">目標≤<span id="dashGoalVisceralHint">11</span></p>
           </div>
           <div class="bg-emerald-50/60 p-1.5 rounded-xl border border-emerald-200/80">
             <p class="text-[10px] text-emerald-700 font-semibold">骨骼肌率</p>
-            <p class="font-bold text-xs text-emerald-600 mt-0.5"><span id="dashMusclePct">30.9</span><span class="text-[9px] font-normal">%</span></p>
-            <p class="text-[9px] text-emerald-700 font-medium mt-0.5"><span id="dashMuscleKg">24.9</span>kg</p>
+            <p class="font-bold text-xs text-emerald-600 mt-0.5"><span id="dashMusclePct">30.0</span><span class="text-[9px] font-normal">%</span></p>
+            <p class="text-[9px] text-emerald-700 font-medium mt-0.5"><span id="dashMuscleKg">22.5</span>kg</p>
           </div>
         </div>
       </div>
@@ -622,11 +662,11 @@
         <div class="grid grid-cols-4 gap-2">
           <div>
             <label class="text-[10px] text-slate-500 block mb-1">目前體重(kg)</label>
-            <input type="number" id="inputWeight" step="0.1" placeholder="80.5" oninput="updateBodyTabLivePreview()" class="w-full bg-purple-50/40 border border-purple-200 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-purple-500">
+            <input type="number" id="inputWeight" step="0.1" placeholder="75.0" oninput="updateBodyTabLivePreview()" class="w-full bg-purple-50/40 border border-purple-200 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-purple-500">
           </div>
           <div>
             <label class="text-[10px] text-amber-600 font-semibold block mb-1">體脂率(%)</label>
-            <input type="number" id="inputBodyFat" step="0.1" placeholder="28.3" oninput="updateBodyTabLivePreview()" class="w-full bg-amber-50/50 border border-amber-200 rounded-xl px-2.5 py-2 text-xs font-bold text-amber-800 focus:outline-none focus:border-amber-500">
+            <input type="number" id="inputBodyFat" step="0.1" placeholder="25.0" oninput="updateBodyTabLivePreview()" class="w-full bg-amber-50/50 border border-amber-200 rounded-xl px-2.5 py-2 text-xs font-bold text-amber-800 focus:outline-none focus:border-amber-500">
           </div>
           <div>
             <label class="text-[10px] text-rose-600 font-semibold block mb-1">內臟脂肪(級)</label>
@@ -668,7 +708,7 @@
       <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
         <h3 class="font-bold text-sm text-slate-700 flex items-center">
           <i class="fa-solid fa-bullseye text-rose-500 mr-2"></i>個人生理參數與目標設定
-        </h3>
+         <button type="button" class="v37-help-btn" aria-label="說明：個人設定與目標" onclick="v37ShowHelp('個人設定與目標')">?</button></h3>
 
         <div class="grid grid-cols-4 gap-2">
           <div>
@@ -680,11 +720,11 @@
           </div>
           <div>
             <label class="text-[10px] text-slate-400 block mb-1">年齡</label>
-            <input type="number" id="profAge" value="46" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold">
+            <input type="number" id="profAge" value="30" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold">
           </div>
           <div>
             <label class="text-[10px] text-slate-400 block mb-1">身高 (cm)</label>
-            <input type="number" id="profHeight" value="172" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold">
+            <input type="number" id="profHeight" value="170" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold">
           </div>
           <div>
             <label class="text-[10px] text-slate-400 block mb-1">日常活動係數</label>
@@ -923,11 +963,9 @@
         <div class="flex items-center justify-between mb-1.5">
           <h3 class="font-bold text-sm text-slate-700 flex items-center">
             <i class="fa-solid fa-fire-flame-curved text-amber-500 mr-2"></i>每日運動後淨熱量 vs 減重目標 (赤字/剩餘直條圖)
-          </h3>
+           <button type="button" class="v37-help-btn" aria-label="說明：淨熱量與目標差額" onclick="v37ShowHelp('淨熱量與目標差額')">?</button></h3>
         </div>
-        <p class="text-[11px] text-slate-500 mb-3">
-          計算公式：<b>(飲食攝取 - 運動消耗) - 減重目標攝取</b>。負數（🟢綠色向下）代表<b>達成赤字／尚有剩餘額度</b>；正數（🔴紅色向上）代表<b>超出目標</b>。
-        </p>
+        <p class="text-xs text-slate-500 mb-3">綠色代表尚有目標額度，紅色代表超出目標。計算細節請點上方 ?。</p>
         <div class="h-56 w-full">
           <canvas id="energyChartCanvas"></canvas>
         </div>
@@ -939,7 +977,7 @@
           <h3 class="font-bold text-sm text-slate-700 flex items-center">
             <i class="fa-solid fa-mobile-screen-button text-emerald-600 mr-2"></i>PWA 桌面安裝與歷史資料備份
           </h3>
-          <span class="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">支援離線獨立運作</span>
+          <span class="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">離線功能尚未完善</span>
         </div>
 
         <div class="grid grid-cols-2 gap-2 pt-1">
@@ -950,6 +988,7 @@
             <i class="fa-solid fa-plus-square text-sm mr-1.5"></i>安裝到手機主畫面
           </button>
         </div>
+        <div id="v37BackupStatus" class="v37-backup-status">尚未確認有可用的 JSON 備份。建議每 7 天備份一次。</div>
         <div class="grid grid-cols-2 gap-2 pt-1">
           <button onclick="exportDataJSON()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 rounded-xl text-xs flex items-center justify-center">
             <i class="fa-solid fa-download mr-1.5"></i>匯出備份 (JSON)
@@ -959,6 +998,7 @@
             <input type="file" accept=".json" class="hidden" onchange="importDataJSON(event)">
           </label>
         </div>
+        <button type="button" onclick="v37UndoLastImport()" class="text-xs text-slate-500 underline text-left py-2">復原上一次匯入前的本機資料（需保有快照）</button>
       </div>
 
     </section>
@@ -1077,6 +1117,97 @@
       </button>
     </div>
   </div>
+
+
+  <!-- V3.7: only appears when no saved record is detected -->
+  <div id="v37Wizard" class="v37-screen v37-hidden" role="dialog" aria-modal="true" aria-labelledby="v37WizardHeading">
+    <div class="v37-panel">
+      <div class="v37-muted">智慧體重管理 V3.7｜初次使用設定</div>
+      <div id="v37WizardProgress" class="v37-stepbar" aria-label="設定進度"><span></span><span></span><span></span></div>
+      <h2 id="v37WizardHeading" class="v37-heading">開始建立個人檔案</h2>
+      <p id="v37WizardIntro" class="v37-muted" style="margin:6px 0 15px"></p>
+      <div id="v37WizardStep1" class="v37-wizard-step">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+          <div id="v37WizardAvatarPreview" style="display:flex;align-items:center;justify-content:center;overflow:hidden;flex:none;background:#e2e8f0;width:70px;height:70px;border-radius:50%;font-size:29px">👤</div>
+          <div><label class="v37-secondary" style="display:inline-block;cursor:pointer;padding:8px 11px;min-height:auto">選擇頭像（選填）<input type="file" id="v37WizardAvatarInput" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="v37WizardAvatarChosen(event)"></label>
+          <button type="button" onclick="v37ResetWizardAvatar()" style="display:block;margin-top:7px;color:#64748b;font-size:12px;text-decoration:underline">使用預設頭像</button></div>
+        </div>
+        <div class="v37-field" style="margin-bottom:10px"><label for="v37Name">暱稱（選填）</label><input id="v37Name" maxlength="24" placeholder="例如：我的健康紀錄" autocomplete="nickname"></div>
+        <div class="v37-grid">
+          <label class="v37-field" for="v37Gender">性別<select id="v37Gender"><option value="M">男性</option><option value="F">女性</option></select></label>
+          <label class="v37-field" for="v37Age">年齡<input id="v37Age" type="number" min="10" max="110" value="30"></label>
+          <label class="v37-field" for="v37Height">身高（公分）<input id="v37Height" type="number" min="100" max="230" step="0.1" value="170"></label>
+          <label class="v37-field" for="v37Activity">日常活動量<select id="v37Activity"><option value="1.2">久坐辦公</option><option value="1.375">輕度活動</option><option value="1.55">中度活動</option></select></label>
+        </div>
+        <div class="v37-note" style="margin-top:12px">頭像可在設定完成後再上傳，也可以一直使用預設圖示。</div>
+      </div>
+      <div id="v37WizardStep2" class="v37-wizard-step v37-hidden-section">
+        <div class="v37-grid">
+          <label class="v37-field" for="v37Weight">目前體重（kg）<input id="v37Weight" type="number" min="20" max="350" step="0.1" value="75"></label>
+          <label class="v37-field" for="v37TargetWeight">目標體重（kg）<input id="v37TargetWeight" type="number" min="20" max="350" step="0.1" value="70"></label>
+          <label class="v37-field" for="v37Fat">目前體脂率（%，選填）<input id="v37Fat" type="number" min="1" max="75" step="0.1" placeholder="可略過"></label>
+          <label class="v37-field" for="v37TargetFat">目標體脂率（%，選填）<input id="v37TargetFat" type="number" min="1" max="75" step="0.1" placeholder="可略過"></label>
+          <label class="v37-field" for="v37Days">預計達成天數<input id="v37Days" type="number" min="7" max="1825" value="90"></label>
+          <label class="v37-field" for="v37Protein">蛋白質目標係數<select id="v37Protein"><option value="0.8">0.8 g/kg</option><option value="1" selected>1.0 g/kg</option><option value="1.2">1.2 g/kg</option><option value="1.4">1.4 g/kg</option></select></label>
+          <label class="v37-field" for="v37Visceral">內臟脂肪（選填）<input id="v37Visceral" type="number" min="1" max="60" placeholder="可略過"></label>
+          <label class="v37-field" for="v37Muscle">骨骼肌率（%，選填）<input id="v37Muscle" type="number" min="5" max="70" step="0.1" placeholder="可略過"></label>
+        </div>
+        <div class="v37-note" style="margin-top:12px">本系統沿用 V3.6 的熱量與營養計算公式，推估值不代表醫療建議。</div>
+      </div>
+      <div id="v37WizardStep3" class="v37-wizard-step v37-hidden-section">
+        <div id="v37WizardSummary" class="v37-note"></div>
+        <div class="v37-note" style="margin-top:12px">按下「確認並開始」後才會儲存設定；日後可從首頁右上角的頭像修改。</div>
+      </div>
+      <p id="v37WizardError" class="v37-alert v37-hidden-section" role="alert" style="margin-top:12px"></p>
+      <div class="v37-action-row">
+        <button id="v37WizardPrev" class="v37-secondary" type="button" onclick="v37WizardBack()">上一步</button>
+        <button id="v37WizardNext" class="v37-primary" type="button" onclick="v37WizardNext()">下一步</button>
+      </div>
+      <div style="margin-top:12px;text-align:center"><button type="button" onclick="v37RequestImport()" class="v37-muted" style="text-decoration:underline">我有舊版 JSON 備份，先匯入</button></div>
+    </div>
+  </div>
+  <!-- V3.7: editing profile, all changes on explicit save -->
+  <div id="v37ProfileModal" class="v37-screen v37-hidden" role="dialog" aria-modal="true" aria-labelledby="v37ProfileHeading">
+    <div class="v37-panel">
+      <h2 id="v37ProfileHeading" class="v37-heading">個人資料與頭像</h2>
+      <p class="v37-muted" style="margin:4px 0 14px">可隨時修改；歷史飲食及運動紀錄不受影響。</p>
+      <div style="text-align:center;margin-bottom:14px"><div id="v37AvatarPreview" style="height:80px;width:80px;border-radius:50%;background:#e2e8f0;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:30px;overflow:hidden">👤</div>
+        <label class="v37-secondary" style="display:inline-block;cursor:pointer">更換頭像<input id="v37AvatarInput" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" onchange="v37AvatarChosen(event)"></label>
+        <button type="button" class="v37-secondary" onclick="v37RemoveAvatar()">使用預設頭像</button>
+      </div>
+      <div class="v37-field" style="margin-bottom:9px"><label for="v37EditName">暱稱（選填）</label><input id="v37EditName" maxlength="24"></div>
+      <div class="v37-grid">
+        <label class="v37-field" for="v37EditGender">性別<select id="v37EditGender"><option value="M">男性</option><option value="F">女性</option></select></label>
+        <label class="v37-field" for="v37EditAge">年齡<input id="v37EditAge" type="number" min="10" max="110"></label>
+        <label class="v37-field" for="v37EditHeight">身高（公分）<input id="v37EditHeight" type="number" min="100" max="230" step="0.1"></label>
+        <label class="v37-field" for="v37EditActivity">日常活動<select id="v37EditActivity"><option value="1.2">久坐辦公</option><option value="1.375">輕度活動</option><option value="1.55">中度活動</option></select></label>
+      </div>
+      <p class="v37-alert v37-hidden-section" id="v37ProfileError" role="alert" style="margin-top:10px"></p>
+      <div class="v37-action-row">
+        <button class="v37-secondary" onclick="v37CloseProfile()">取消</button>
+        <button class="v37-secondary" onclick="v37OpenFullSettings()">其他目標設定</button>
+        <button class="v37-primary" onclick="v37SaveProfile()">儲存修改</button>
+      </div>
+    </div>
+  </div>
+  <!-- V3.7: centralized accessible explanatory dialog -->
+  <div id="v37HelpModal" class="v37-screen v37-hidden" role="dialog" aria-modal="true" aria-labelledby="v37HelpTitle">
+    <div class="v37-panel"><h2 id="v37HelpTitle" class="v37-heading"></h2><p id="v37HelpText" style="white-space:pre-line;line-height:1.8;margin-top:15px;font-size:15px;color:#334155"></p>
+      <div class="v37-action-row"><button class="v37-primary" onclick="v37CloseHelp()">我知道了</button></div></div>
+  </div>
+  <!-- V3.7: import summary and explicit consent before replacement -->
+  <div id="v37ImportModal" class="v37-screen v37-hidden" role="dialog" aria-modal="true" aria-labelledby="v37ImportHeading">
+    <div class="v37-panel"><h2 id="v37ImportHeading" class="v37-heading">匯入前請確認</h2><div id="v37ImportDetails" class="v37-note" style="margin-top:14px"></div>
+      <p class="v37-alert" style="margin-top:12px">此操作會將目前的健康紀錄替換為備份內容，不會自動合併。系統將先在此瀏覽器保留一份可復原快照；請自行另外儲存 JSON 備份。</p>
+      <div class="v37-action-row"><button class="v37-secondary" onclick="v37CancelImport()">取消</button><button class="v37-danger" onclick="v37ConfirmImport()">確認取代並還原</button></div></div>
+  </div>
+  <div id="v37BackupConfirm" class="v37-screen v37-hidden" role="dialog" aria-modal="true" aria-labelledby="v37BackupHeading">
+    <div class="v37-panel"><h2 id="v37BackupHeading" class="v37-heading">請確認備份是否存妥</h2>
+      <p class="v37-muted" style="margin-top:10px">請到 iPhone「檔案」App 或電腦「下載」資料夾，確認 JSON 檔案真的存在。只有你按下確認後，才會記錄這次的備份日期。</p>
+      <div class="v37-action-row"><button class="v37-secondary" onclick="v37HideBackupConfirm()">尚未存妥</button><button class="v37-primary" onclick="v37ConfirmBackupSaved()">已確認檔案存在</button></div>
+    </div>
+  </div>
+  <input type="file" id="v37QuickImportFile" accept=".json,application/json" class="hidden" onchange="importDataJSON(event)">
 
   <!-- 底部固定導覽列 -->
   <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50" style="padding-bottom: env(safe-area-inset-bottom);">
@@ -1264,17 +1395,17 @@
     let appState = {
       profile: {
         gender: "M",
-        age: 46,
-        height: 172,
+        age: 30,
+        height: 170,
         activity: 1.2,
         proteinFactor: 1.0,
-        startWeight: 83.0,
-        startFat: 29.8,      // 起始體脂率 (%)
-        startVisceral: 17,   // 起始內臟脂肪等級
-        startMuscle: 29.3,   // 起始骨骼肌率 (%)
-        targetWeight: 73.0,
-        targetFat: 24.0,     // 目標體脂率 (%)
-        targetVisceral: 11,  // 目標內臟脂肪等級
+        startWeight: 75.0,
+        startFat: 25.0,      // 起始體脂率 (%)
+        startVisceral: 10,   // 起始內臟脂肪等級
+        startMuscle: 30.0,   // 起始骨骼肌率 (%)
+        targetWeight: 70.0,
+        targetFat: 22.0,     // 目標體脂率 (%)
+        targetVisceral: 8,  // 目標內臟脂肪等級
         targetMuscle: 32.0,  // 目標骨骼肌率 (%)
         startDate: new Date().toISOString().split('T')[0],
         targetDays: 90,
@@ -1290,12 +1421,19 @@
     window.addEventListener('DOMContentLoaded', () => {
       checkLineInAppBrowser();
       initDynamicPWAEnvironment();
+      const v37Existing = v37HasExistingData();
       loadState();
+      v37InitializeMetadata(v37Existing);
       initFoodPresetDropdown();
       initExercisePresetDropdown();
       document.getElementById('currentDateInput').value = currentSelectedDate;
       syncProfileInputs();
       renderAll();
+      v37RefreshHeader();
+      v37RefreshBackupStatus();
+      v37ShowEstimationCaution();
+      if (!v37Existing) v37OpenWizard();
+      else v37ShowBackupReminderIfDue();
     });
 
     // 攔截系統原生 PWA 安裝提示
@@ -1364,7 +1502,7 @@
         if (favLink) favLink.href = icon192;
 
         const manifest = {
-          name: "智慧體重管理 V3.6",
+          name: "智慧體重管理 V3.7",
           short_name: "智慧體重管理",
           description: "專為辦公室工作者設計之雙基底智慧體重與體組成管理系統",
           start_url: "./",
@@ -1599,7 +1737,8 @@
 
       let htmlStr = "<!DOCTYPE html>\n" + cloneDoc.outerHTML;
       if (includeCurrentData) {
-        const preloadScript = `<script>window.__PRELOADED_FITNESS_STATE__ = ${JSON.stringify(appState)};<\/script>`;
+        const exportSafeState = {...appState, profile: {...appState.profile, geminiKey: ''}};
+        const preloadScript = `<script>window.__PRELOADED_FITNESS_STATE__ = ${JSON.stringify(exportSafeState)};<\/script>`;
         htmlStr = htmlStr.replace('</head>', `${preloadScript}\n</head>`);
       }
       return htmlStr;
@@ -1652,7 +1791,7 @@
     }
 
     // 輔助函式：自動判斷並將早期可能誤存為 KG (如 23.6) 的骨骼肌數值無損轉換為比率 (%)
-    function normalizeMusclePctValue(val, refWeight = 80.5) {
+    function normalizeMusclePctValue(val, refWeight = 75.0) {
       const num = parseFloat(val);
       if (isNaN(num) || num <= 0) return 29.3;
       // 若數值小於 25.5 且體重大於 65kg，代表該筆舊紀錄當時存到的是 kg (如 23.6kg)，自動反推回百分比 (23.6 / 80.4 * 100 = 29.3%)
@@ -1686,7 +1825,7 @@
           if (!appState.profile.targetVisceral) appState.profile.targetVisceral = 11;
 
           // 自動校正個人設定與歷史紀錄中可能殘留的舊版 KG 骨骼肌數值
-          const startW = parseFloat(appState.profile.startWeight) || 83.0;
+          const startW = parseFloat(appState.profile.startWeight) || 75.0;
           appState.profile.startMuscle = normalizeMusclePctValue(appState.profile.startMuscle, startW);
           if (appState.profile.targetMuscle < 26) {
             appState.profile.targetMuscle = 32.0;
@@ -1800,8 +1939,8 @@
       ensureDateLogExists(dateStr);
       const log = appState.logs[dateStr];
       const p = appState.profile;
-      const currentW = parseFloat(log.weight) || parseFloat(p.startWeight) || 80.5;
-      const targetW = parseFloat(p.targetWeight) || 73.0;
+      const currentW = parseFloat(log.weight) || parseFloat(p.startWeight) || 75.0;
+      const targetW = parseFloat(p.targetWeight) || 70.0;
       const startW = parseFloat(p.startWeight) || currentW;
       const act = parseFloat(p.activity) || 1.2;
 
@@ -2346,6 +2485,11 @@
       const fatKg = ((w * fPct) / 100).toFixed(1);
       const musKg = ((w * mPct) / 100).toFixed(1);
       const isReached = w <= appState.profile.targetWeight;
+      if (appState.uiProfile?.estimatedMissingMetrics && [w,fPct,vFat,mPct].every(n=>Number.isFinite(n)&&n>0)) {
+        appState.uiProfile.estimatedMissingMetrics=false;
+        saveState();
+        v37ShowEstimationCaution();
+      }
       showNotice(`已儲存 ${currentSelectedDate} 的體組成數值！\n目前體重：${w.toFixed(1)}kg\n體脂率：${fPct.toFixed(1)}% (體脂重 ${fatKg}kg)\n內臟脂肪：${Math.round(vFat || 0)} 級\n骨骼肌率：${mPct.toFixed(1)}% (骨骼肌重 ${musKg}kg)\n${isReached ? '🎉 恭喜！目前已達到目標體重！' : '系統將持續以您的減重目標與目標體重計算每日建議攝取量。'}`);
     }
 
@@ -2397,10 +2541,10 @@
                   {
                     text: "請從這張體脂計APP截圖中精準提取四個數值：\n" +
                           "1.『weight』(目前體重，位於第1個體重區塊，單位為 kg，例如 80.40 則取 80.4)。\n" +
-                          "2.『bodyFat』(體脂率，位於第2個體脂肪區塊左側第1個百分比 % 數值，例如 29.8；忽略右側的 24.0 kg)。\n" +
+                          "2.『bodyFat』(體脂率，位於第2個體脂肪區塊左側第1個百分比 % 數值，例如 25.0；忽略右側的 24.0 kg)。\n" +
                           "3.『visceralFat』(內臟脂肪程度，位於第3個內臟脂肪區塊的整數等級，例如 16)。\n" +
                           "4.『muscle』(骨骼肌率，位於第4個骨骼肌區塊左側第1個百分比 % 數值，例如 29.3；請務必讀取第1個數值 29.3，絕對不要讀取右側第2個 23.6 kg)。\n" +
-                          "請只回傳純 JSON 格式，例如：{\"weight\": 80.4, \"bodyFat\": 29.8, \"visceralFat\": 16, \"muscle\": 29.3}"
+                          "請只回傳純 JSON 格式，例如：{\"weight\": 80.4, \"bodyFat\": 25.0, \"visceralFat\": 16, \"muscle\": 29.3}"
                   },
                   { inline_data: { mime_type: mimeType, data: base64Data.split(',')[1] } }
                 ]
@@ -2608,7 +2752,7 @@
 
       // 防呆保護：確保 musclePct 絕對是比率 (%) 而非重量 (kg)
       if (musclePct && muscleMassKg) {
-        const refW = weight || 80.5;
+        const refW = weight || 75.0;
         if (refW < 100 && musclePct < muscleMassKg) {
           const tmp = musclePct;
           musclePct = muscleMassKg;
@@ -2704,11 +2848,11 @@
       p.activity = parseFloat(document.getElementById('profActivity').value) || 1.2;
       p.proteinFactor = parseFloat(document.getElementById('profProteinFactor').value) || 1.0;
       p.officeStandardMigrated = true;
-      p.startWeight = parseFloat(document.getElementById('profStartWeight').value) || 83.0;
-      p.startFat = parseFloat(document.getElementById('profStartFat').value) || 29.8;
+      p.startWeight = parseFloat(document.getElementById('profStartWeight').value) || 75.0;
+      p.startFat = parseFloat(document.getElementById('profStartFat').value) || 25.0;
       p.startVisceral = parseInt(document.getElementById('profStartVisceral').value) || 17;
       p.startMuscle = parseFloat(document.getElementById('profStartMuscle').value) || 29.3;
-      p.targetWeight = parseFloat(document.getElementById('profTargetWeight').value) || 73.0;
+      p.targetWeight = parseFloat(document.getElementById('profTargetWeight').value) || 70.0;
       p.targetFat = parseFloat(document.getElementById('profTargetFat').value) || 24.0;
       p.targetVisceral = parseInt(document.getElementById('profTargetVisceral').value) || 11;
       p.targetMuscle = parseFloat(document.getElementById('profTargetMuscle').value) || 32.0;
@@ -2718,6 +2862,7 @@
 
       saveState();
       renderAll();
+      v37RefreshHeader();
       showNotice("個人生理參數與減重目標設定已更新！");
     }
 
@@ -2726,8 +2871,8 @@
       const log = appState.logs[currentSelectedDate];
       const targets = calculateDailyTargets(currentSelectedDate);
 
-      const curW = parseFloat(log.weight) || parseFloat(appState.profile.startWeight) || 80.5;
-      const curFatPct = parseFloat(log.bodyFat) || parseFloat(appState.profile.startFat) || 28.3;
+      const curW = parseFloat(log.weight) || parseFloat(appState.profile.startWeight) || 75.0;
+      const curFatPct = parseFloat(log.bodyFat) || parseFloat(appState.profile.startFat) || 25.0;
       const curVisceral = parseInt(log.visceralFat) || parseInt(appState.profile.startVisceral) || 16;
       const curMusclePct = normalizeMusclePctValue(log.muscle || appState.profile.startMuscle, curW);
 
@@ -3018,11 +3163,11 @@
       const remainDays = Math.max(0, p.targetDays - elapsedDays);
       document.getElementById('daysRemainingBadge').textContent = `已執行 ${elapsedDays} 天 / 剩餘 ${remainDays} 天`;
 
-      const startWeightKg = parseFloat((parseFloat(p.startWeight) || 83.0).toFixed(1));
+      const startWeightKg = parseFloat((parseFloat(p.startWeight) || 75.0).toFixed(1));
       const currentWeightKg = parseFloat((parseFloat(latest.weight) || startWeightKg).toFixed(1));
-      const targetWeightKg = parseFloat((parseFloat(p.targetWeight) || 73.0).toFixed(1));
+      const targetWeightKg = parseFloat((parseFloat(p.targetWeight) || 70.0).toFixed(1));
 
-      const startFatPct = parseFloat(p.startFat) || 29.8;
+      const startFatPct = parseFloat(p.startFat) || 25.0;
       const currentFatPct = parseFloat(latest.bodyFat) || startFatPct;
       const targetFatPct = parseFloat(p.targetFat) || 24.0;
 
@@ -3438,40 +3583,394 @@
       });
     }
 
-    // ================= 12. 匯出與匯入備份 =================
-    function exportDataJSON() {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
-      const dlAnchor = document.createElement('a');
-      dlAnchor.setAttribute("href", dataStr);
-      dlAnchor.setAttribute("download", `fitness_tracker_backup_${currentSelectedDate}.json`);
-      document.body.appendChild(dlAnchor);
-      dlAnchor.click();
-      dlAnchor.remove();
+    // ================= 12. V3.7 safe JSON backup/restore =================
+    async function exportDataJSON() {
+      // A portable backup intentionally excludes API credentials.
+      const snapshot = JSON.parse(JSON.stringify(appState));
+      if (snapshot.profile) snapshot.profile.geminiKey = '';
+      const payload = JSON.stringify(snapshot, null, 2);
+      const name = `fitness_backup_V3.7_${currentSelectedDate}.json`;
+      const file = new File([payload], name, { type: 'application/json' });
+      try {
+        if (navigator.share && navigator.canShare && navigator.canShare({files:[file]})) {
+          await navigator.share({files:[file], title:'智慧體重管理 JSON 備份'});
+        } else {
+          const url = URL.createObjectURL(file);
+          const a = document.createElement('a');
+          a.href = url; a.download = name; document.body.appendChild(a);
+          a.click(); a.remove();
+          setTimeout(()=>URL.revokeObjectURL(url), 8000);
+        }
+        document.getElementById('v37BackupConfirm').classList.remove('v37-hidden');
+      } catch (err) {
+        if (err?.name !== 'AbortError') showNotice('備份未成功啟動，請重試或使用其他瀏覽器。');
+      }
     }
 
     function importDataJSON(event) {
-      const file = event.target.files[0];
+      const input=event.target;
+      const file = input.files && input.files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = e => {
+      if (file.size > 12*1024*1024) {
+        showNotice('備份檔超過 12MB，請確認檔案來源。');
+        input.value=''; return;
+      }
+      const reader=new FileReader();
+      reader.onload=e=>{
         try {
-          const imported = JSON.parse(e.target.result);
-          if (imported.profile && imported.logs) {
-            appState = imported;
-            saveState();
-            loadState();
-            syncProfileInputs();
-            renderAll();
-            renderAnalyticsAndCharts();
-            showNotice("歷史紀錄還原成功！");
-          } else {
-            showNotice("檔案格式不符！");
-          }
-        } catch (err) {
-          showNotice("讀取 JSON 失敗！");
-        }
+          const data=JSON.parse(e.target.result);
+          const check=v37CheckImportData(data);
+          if (!check.ok) throw new Error(check.error);
+          v37PendingImport=data;
+          document.getElementById('v37ImportDetails').textContent =
+            `備份日期：${check.first || '無'} ～ ${check.last || '無'}\n`+
+            `有紀錄的日期：${check.days} 天\n`+
+            `餐點：${check.meals} 筆；運動：${check.exercises} 筆\n`+
+            `自訂食物：${check.foods} 項；自訂運動：${check.customEx} 項\n`+
+            `備份版本：${data.schemaVersion || 'V3.6（舊版格式）'}\n`+
+            `目前本機紀錄日期：${Object.keys(appState.logs || {}).length} 天`;
+          document.getElementById('v37ImportModal').classList.remove('v37-hidden');
+        } catch(err) {showNotice('無法匯入：'+err.message);}
+        finally {input.value='';}
       };
-      reader.readAsText(file);
+      reader.onerror=()=>{showNotice('讀取 JSON 失敗，請檢查檔案。');input.value='';};
+      reader.readAsText(file,'utf-8');
+    }
+
+    // ===== V3.7 additions: onboarding, profile, help, backups =====
+    const V37_ROLLBACK_KEY = STORAGE_KEY + '_ROLLBACK_V37';
+    const V37_HELP = {
+      '能量基底與熱量收支': '系統比較當日飲食攝取與你的階段目標，並扣除另外登錄的運動消耗。這是理論計算值，並不直接代表脂肪變化。',
+      '營養基底的計算': '蛋白質以目標體重乘上你選擇的係數計算；脂肪與碳水沿用原來的目標熱量分配公式。食物營養值是估算，可能因份量與烹調而不同。',
+      '身體組成數據': '體重、體脂率、內臟脂肪及骨骼肌率來自手動輸入或截圖辨識。體脂重和骨骼肌重則是由體重乘上相應百分比換算。',
+      '淨熱量與目標差額': '公式：(當日飲食攝取－運動消耗)－每日目標攝取。負數代表仍在目標額度內，正數代表超出目標；這不是實際體脂變化量。',
+      '脂肪推估不等於量測': '理論體脂變化估算不能取代實際測量；水分、代謝及短期波動可能造成誤差。建議觀察數週的體重和體脂率趨勢。',
+      '肌肉變化是估算': '依飲食和運動習慣推估，並非直接測量的肌肉增減。請以同一台體脂計的長期紀錄作為參考。',
+      '個人設定與目標': '可在這裡調整性別、年齡、身高、活動係數、減重計畫與 Gemini Key。調整目標不會清除過去的餐點或運動紀錄。'
+    };
+    let v37WizardStep = 1;
+    let v37PendingImport = null;
+    let v37AvatarDraft = null;
+    let v37WizardAvatarDraft = '';
+    let v37ReminderThisSession = false;
+    const v37Get = id => document.getElementById(id);
+    const v37Number = id => Number(v37Get(id).value);
+    const v37InRange = (x, a, b) => Number.isFinite(x) && x>=a && x<=b;
+    const v37Toggle = (id,show) => v37Get(id).classList.toggle('v37-hidden',!show);
+    function v37HasExistingData() {
+      try {
+        const p=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
+        if(p && p.profile && p.logs && typeof p.logs==='object') return true;
+      } catch(e) {}
+      const p=window.__PRELOADED_FITNESS_STATE__;
+      return Boolean(p && p.profile && p.logs && Object.keys(p.logs).length);
+    }
+    function v37InitializeMetadata(existing) {
+      if(!appState.uiProfile || typeof appState.uiProfile !== 'object') {
+        appState.uiProfile={nickname:'',avatarDataUrl:'',onboardingCompleted:Boolean(existing),lastBackupAt:null};
+        // For an existing v3.6 user, metadata is written with the next normal save or backup.
+      }
+      if(!appState.schemaVersion) appState.schemaVersion=2;
+    }
+    function v37RefreshHeader() {
+      const ui=appState.uiProfile || {};
+      const button=v37Get('v37AvatarHeader');
+      if(!button) return;
+      button.replaceChildren();
+      if(typeof ui.avatarDataUrl==='string' && /^data:image\/(?:jpeg|png|webp);base64,/.test(ui.avatarDataUrl)) {
+        const img=document.createElement('img');img.src=ui.avatarDataUrl;img.alt='個人頭像';button.appendChild(img);
+      } else {
+        const ico=document.createElement('i');ico.className='fa-solid fa-user';button.appendChild(ico);
+      }
+      button.title=(ui.nickname || '個人資料')+'｜修改基本資料';
+    }
+    function v37OpenWizard() {
+      v37WizardStep=1;
+      v37WizardAvatarDraft='';
+      v37Toggle('v37Wizard',true);
+      v37UpdateWizard();
+    }
+    function v37UpdateWizard() {
+      [1,2,3].forEach(n=>v37Get('v37WizardStep'+n).classList.toggle('v37-hidden-section',n!==v37WizardStep));
+      const labels=[['建立個人檔案','先設定計算熱量所需的基本資料。頭像可以稍後再加入。'],
+        ['設定健康基準與目標','先填目前體重與目標體重；若沒有體脂計，可略過其他量測。'],
+        ['確認並開始使用','按下完成才會將設定寫入手機。本系統不會自動同步到雲端。']];
+      v37Get('v37WizardHeading').textContent=labels[v37WizardStep-1][0];
+      v37Get('v37WizardIntro').textContent=labels[v37WizardStep-1][1];
+      v37Get('v37WizardPrev').style.visibility=v37WizardStep===1?'hidden':'visible';
+      v37Get('v37WizardNext').textContent=v37WizardStep===3?'確認並開始':'下一步';
+      [...v37Get('v37WizardProgress').children].forEach((e,i)=>e.classList.toggle('active',i<v37WizardStep));
+      v37Get('v37WizardError').classList.add('v37-hidden-section');
+      if(v37WizardStep===3) {
+        const w=v37Number('v37Weight'),t=v37Number('v37TargetWeight'),age=v37Number('v37Age'),h=v37Number('v37Height');
+        const bmr=Math.round(10*t+6.25*h-5*age+(v37Get('v37Gender').value==='M'?5:-161));
+        const activity=v37Number('v37Activity');
+        const delta=Math.round((t-w)*7700/v37Number('v37Days'));
+        const estimate=w<=t?Math.round(bmr*activity):Math.max(bmr,Math.round(bmr*activity)+delta);
+        v37Get('v37WizardSummary').textContent = `暱稱：${v37Get('v37Name').value.trim() || '未設定'}\n`+
+          `年齡／身高：${age} 歲／${h} 公分\n`+
+          `體重基準：${w} kg → 目標 ${t} kg\n`+
+          `每日目標熱量：約 ${estimate} kcal（沿用 V3.6 公式估算）\n`+
+          `蛋白質目標：約 ${Math.round(t*v37Number('v37Protein'))} g\n`+
+          `如需其他身體組成目標，可稍後在「截圖與目標」頁調整。`;
+        v37Get('v37WizardSummary').style.whiteSpace='pre-line';
+      }
+    }
+    function v37Error(id,msg) {const el=v37Get(id);el.textContent=msg;el.classList.remove('v37-hidden-section');}
+    function v37WizardBack() {if(v37WizardStep>1){v37WizardStep--;v37UpdateWizard();}}
+    function v37WizardNext() {
+      if(v37WizardStep===1) {
+        if(!v37InRange(v37Number('v37Age'),10,110)||!v37InRange(v37Number('v37Height'),100,230)) {
+          v37Error('v37WizardError','請確認年齡為 10～110 歲、身高為 100～230 公分。');return;
+        }
+      }
+      if(v37WizardStep===2) {
+        if(!v37InRange(v37Number('v37Weight'),20,350)||!v37InRange(v37Number('v37TargetWeight'),20,350)||!v37InRange(v37Number('v37Days'),7,1825)) {
+          v37Error('v37WizardError','請填寫有效的目前體重、目標體重及預計天數。');return;
+        }
+        for(const [id,a,b] of [['v37Fat',1,75],['v37TargetFat',1,75],['v37Visceral',1,60],['v37Muscle',5,70]]) {
+          if(v37Get(id).value.trim() && !v37InRange(v37Number(id),a,b)) {
+            v37Error('v37WizardError','選填的體組成資料不在合理範圍，請修改或留空。');return;
+          }
+        }
+      }
+      if(v37WizardStep<3) {v37WizardStep++;v37UpdateWizard();return;}
+      const prior=JSON.stringify(appState);
+      try {
+        const p=appState.profile;
+        p.gender=v37Get('v37Gender').value;
+        p.age=v37Number('v37Age'); p.height=v37Number('v37Height');
+        p.activity=v37Number('v37Activity'); p.proteinFactor=v37Number('v37Protein');
+        p.officeStandardMigrated=true;
+        p.startWeight=v37Number('v37Weight'); p.targetWeight=v37Number('v37TargetWeight');
+        p.startDate=currentSelectedDate; p.targetDays=v37Number('v37Days');
+        // Unmeasured optional fields use neutral application defaults but are not falsely presented as readings.
+        p.startFat=v37Get('v37Fat').value? v37Number('v37Fat'):25;
+        p.targetFat=v37Get('v37TargetFat').value?v37Number('v37TargetFat'):22;
+        p.startVisceral=v37Get('v37Visceral').value?v37Number('v37Visceral'):10;
+        p.startMuscle=v37Get('v37Muscle').value?v37Number('v37Muscle'):30;
+        appState.logs={};
+        ensureDateLogExists(currentSelectedDate);
+        appState.uiProfile={...appState.uiProfile,nickname:v37Get('v37Name').value.trim(),onboardingCompleted:true,
+          avatarDataUrl:v37WizardAvatarDraft,
+          estimatedMissingMetrics:['v37Fat','v37Visceral','v37Muscle'].filter(id=>!v37Get(id).value.trim()).length>0};
+        appState.schemaVersion=2;
+        saveState();
+      } catch(e) {
+        appState=JSON.parse(prior);
+        v37Error('v37WizardError','儲存失敗，可能是手機儲存空間不足。原資料未變動。');return;
+      }
+      v37Toggle('v37Wizard',false);
+      syncProfileInputs(); renderAll(); v37RefreshHeader();v37RefreshBackupStatus();v37ShowEstimationCaution();
+      showNotice('基本設定已完成！可點右上方頭像修改。建議先備份 JSON。');
+    }
+    function v37ResetWizardAvatar() {
+      v37WizardAvatarDraft='';
+      v37Get('v37WizardAvatarPreview').textContent='👤';
+    }
+    function v37WizardAvatarChosen(event) {
+      const file=event.target.files?.[0];
+      if(!file)return;
+      event.target.value='';
+      if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024){
+        v37Error('v37WizardError','請選擇 5MB 以下的 JPG、PNG 或 WebP 圖片。');return;
+      }
+      const url=URL.createObjectURL(file);
+      const img=new Image();
+      img.onload=()=>{
+        try {
+          const cvs=document.createElement('canvas');cvs.width=224;cvs.height=224;
+          const c=cvs.getContext('2d');const size=Math.min(img.width,img.height);
+          c.drawImage(img,(img.width-size)/2,(img.height-size)/2,size,size,0,0,224,224);
+          v37WizardAvatarDraft=cvs.toDataURL('image/jpeg',0.74);
+          const holder=v37Get('v37WizardAvatarPreview');holder.replaceChildren();
+          const picture=document.createElement('img');picture.alt='已選擇的頭像';picture.src=v37WizardAvatarDraft;
+          picture.style.cssText='width:100%;height:100%;object-fit:cover';holder.appendChild(picture);
+        } catch(e){v37Error('v37WizardError','頭像處理失敗，可改選另一張照片或略過。');}
+        finally {URL.revokeObjectURL(url);}
+      };
+      img.onerror=()=>{URL.revokeObjectURL(url);v37Error('v37WizardError','圖片讀取失敗，可略過此步驟。');};
+      img.src=url;
+    }
+    function v37OpenProfile() {
+      const p=appState.profile,ui=appState.uiProfile||{};
+      v37Get('v37EditName').value=ui.nickname||'';
+      v37Get('v37EditGender').value=p.gender;
+      v37Get('v37EditAge').value=p.age;
+      v37Get('v37EditHeight').value=p.height;
+      v37Get('v37EditActivity').value=String(p.activity);
+      v37AvatarDraft=ui.avatarDataUrl||'';
+      v37UpdateAvatarPreview();
+      v37Get('v37ProfileError').classList.add('v37-hidden-section');
+      v37Toggle('v37ProfileModal',true);
+    }
+    function v37CloseProfile() {v37Toggle('v37ProfileModal',false);v37AvatarDraft=null;}
+    function v37OpenFullSettings() {v37CloseProfile();switchTab('tab-body');}
+    function v37UpdateAvatarPreview(){
+      const container=v37Get('v37AvatarPreview');container.replaceChildren();
+      if(v37AvatarDraft){const img=document.createElement('img');img.src=v37AvatarDraft;img.alt='頭像預覽';img.style.cssText='width:100%;height:100%;object-fit:cover';container.appendChild(img);}
+      else container.textContent='👤';
+    }
+    function v37RemoveAvatar(){v37AvatarDraft='';v37UpdateAvatarPreview();}
+    function v37AvatarChosen(event){
+      const file=event.target.files?.[0];if(!file)return;
+      event.target.value='';
+      if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024){v37Error('v37ProfileError','請選擇 5MB 以下的 JPG、PNG 或 WebP 照片。');return;}
+      const url=URL.createObjectURL(file);
+      const image=new Image();
+      image.onload=()=>{
+        try {
+          const cvs=document.createElement('canvas');cvs.width=224;cvs.height=224;
+          const ctx=cvs.getContext('2d');
+          const side=Math.min(image.width,image.height),sx=(image.width-side)/2,sy=(image.height-side)/2;
+          ctx.drawImage(image,sx,sy,side,side,0,0,224,224);
+          v37AvatarDraft=cvs.toDataURL('image/jpeg',.74);
+          v37UpdateAvatarPreview();
+        } catch(e){v37Error('v37ProfileError','圖片處理失敗，請換一張照片。');}
+        finally {URL.revokeObjectURL(url);}
+      };
+      image.onerror=()=>{URL.revokeObjectURL(url);v37Error('v37ProfileError','無法讀取照片。');};
+      image.src=url;
+    }
+    function v37SaveProfile(){
+      const age=v37Number('v37EditAge'),height=v37Number('v37EditHeight');
+      if(!v37InRange(age,10,110)||!v37InRange(height,100,230)){
+        v37Error('v37ProfileError','請確認年齡 10～110 歲，身高 100～230 公分。');return;
+      }
+      const original=JSON.stringify(appState);
+      try {
+        appState.profile.gender=v37Get('v37EditGender').value;
+        appState.profile.age=age;appState.profile.height=height;
+        appState.profile.activity=Number(v37Get('v37EditActivity').value);
+        appState.uiProfile={...appState.uiProfile,nickname:v37Get('v37EditName').value.trim(),avatarDataUrl:v37AvatarDraft||'',onboardingCompleted:true};
+        saveState();
+      } catch(e){appState=JSON.parse(original);v37Error('v37ProfileError','儲存失敗，舊資料已保留。可嘗試移除頭像以節省空間。');return;}
+      v37CloseProfile();syncProfileInputs();renderAll();v37RefreshHeader();showNotice('個人資料已更新。');
+    }
+    function v37ShowHelp(title){
+      v37Get('v37HelpTitle').textContent=title;
+      v37Get('v37HelpText').textContent=V37_HELP[title]||'暫無說明。';
+      v37Toggle('v37HelpModal',true);
+    }
+    function v37CloseHelp(){v37Toggle('v37HelpModal',false);}
+    function v37RequestImport(){v37Get('v37QuickImportFile').click();}
+    function v37CheckImportData(data){
+      const bad=error=>({ok:false,error});
+      if(!data||typeof data!=='object'||Array.isArray(data))return bad('內容不是有效的備份物件。');
+      if(!data.profile||typeof data.profile!=='object'||Array.isArray(data.profile)||!data.logs||typeof data.logs!=='object'||Array.isArray(data.logs))return bad('缺少 profile 或 logs。');
+      if(!v37InRange(Number(data.profile.age),10,110)||!v37InRange(Number(data.profile.height),100,230))return bad('個人資料中的年齡或身高無效。');
+      for(const k of ['startWeight','targetWeight'])if(!v37InRange(Number(data.profile[k]),20,350))return bad('個人資料中的體重數值無效。');
+      if(data.customFoods!=null&&!Array.isArray(data.customFoods))return bad('customFoods 格式不正確。');
+      if(data.customExercises!=null&&!Array.isArray(data.customExercises))return bad('customExercises 格式不正確。');
+      const dates=Object.keys(data.logs).sort();
+      if(dates.length>10000)return bad('日期紀錄過多。');
+      let meals=0,exercises=0;
+      for(const d of dates){
+        if(!/^\d{4}-\d\d-\d\d$/.test(d)||!Number.isFinite(Date.parse(d)))return bad('包含無效日期：'+d);
+        const item=data.logs[d];
+        if(!item||typeof item!=='object'||Array.isArray(item))return bad('某日紀錄格式不正確。');
+        if(!Array.isArray(item.meals)||!Array.isArray(item.exercises))return bad('某日的餐點或運動不是清單。');
+        meals+=item.meals.length;exercises+=item.exercises.length;
+        if(meals+exercises>100000)return bad('紀錄筆數過多。');
+      }
+      return {ok:true,days:dates.length,first:dates[0],last:dates[dates.length-1],meals,exercises,foods:(data.customFoods||[]).length,customEx:(data.customExercises||[]).length};
+    }
+    function v37CancelImport(){v37PendingImport=null;v37Toggle('v37ImportModal',false);}
+    function v37ConfirmImport(){
+      const imported=v37PendingImport;
+      if(!imported)return;
+      const c=v37CheckImportData(imported);if(!c.ok){v37CancelImport();showNotice('驗證失敗：'+c.error);return;}
+      const oldState=appState;
+      const oldRaw=localStorage.getItem(STORAGE_KEY);
+      try {
+        // Refuse destructive replacement if browser cannot hold a rollback snapshot.
+        localStorage.setItem(V37_ROLLBACK_KEY,oldRaw || JSON.stringify(oldState));
+        const oldKey=oldState.profile?.geminiKey||'';
+        const p={...oldState.profile,...imported.profile};
+        // Missing API credentials in portable JSON do not erase locally configured key.
+        p.geminiKey=(typeof imported.profile.geminiKey==='string'&&imported.profile.geminiKey)?imported.profile.geminiKey:oldKey;
+        appState={...oldState,...imported,profile:p,logs:imported.logs,
+          customFoods:imported.customFoods||[],customExercises:imported.customExercises||[],
+          schemaVersion:2,
+          uiProfile:{...oldState.uiProfile,...(imported.uiProfile||{}),onboardingCompleted:true}};
+        saveState();
+      }catch(err){
+        appState=oldState;
+        try {if(oldRaw!==null)localStorage.setItem(STORAGE_KEY,oldRaw);else localStorage.removeItem(STORAGE_KEY);}catch(e){}
+        v37CancelImport();showNotice('匯入未完成：可能是裝置空間不足。舊資料未取代。');return;
+      }
+      v37CancelImport();
+      v37Toggle('v37Wizard',false);
+      ensureDateLogExists(currentSelectedDate);
+      syncProfileInputs();initFoodPresetDropdown();initExercisePresetDropdown();renderAll();v37RefreshHeader();v37RefreshBackupStatus();
+      showNotice(`已匯入 ${c.days} 天、${c.meals} 筆餐點、${c.exercises} 筆運動。舊資料快照已保留在此瀏覽器內。`);
+    }
+    function v37HideBackupConfirm(){v37Toggle('v37BackupConfirm',false);}
+    function v37ConfirmBackupSaved(){
+      const original=appState.uiProfile?.lastBackupAt||null;
+      try {appState.uiProfile={...appState.uiProfile,lastBackupAt:new Date().toISOString()};saveState();}
+      catch(e){appState.uiProfile.lastBackupAt=original;showNotice('無法記錄備份日期，請檢查手機空間。');}
+      v37HideBackupConfirm();v37RefreshBackupStatus();
+    }
+    function v37RefreshBackupStatus(){
+      const el=v37Get('v37BackupStatus');if(!el)return;
+      const val=appState.uiProfile?.lastBackupAt;
+      if(!val){el.textContent='尚未確認有可用的 JSON 備份。建議每 7 天備份一次。';return;}
+      const date=new Date(val);
+      el.textContent=Number.isFinite(date.getTime())?`上次手動確認備份：${date.toLocaleDateString('zh-TW')}。建議每 7 天備份一次。`:'備份日期尚未確認。';
+    }
+    function v37ShowBackupReminderIfDue(){
+      if(v37ReminderThisSession)return;
+      const raw=appState.uiProfile?.lastBackupAt;
+      const date=raw?new Date(raw):null;
+      const due= !date || !Number.isFinite(date.getTime()) || Date.now()-date.getTime()>7*24*60*60*1000;
+      if(!due)return;
+      v37ReminderThisSession=true;
+      // Non-blocking reminder only: no automatic cloud upload or notification.
+      const banner=document.createElement('div');banner.id='v37ReminderBanner';
+      banner.style.cssText='background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:12px;margin:0 0 14px;font-size:13px;line-height:1.6;color:#065f46';
+      const msg=document.createElement('span');msg.textContent='備份提醒：已達每 7 天備份週期，請將健康紀錄匯出為 JSON 並另存到「檔案」App。';banner.appendChild(msg);
+      const action=document.createElement('button');action.textContent='前往備份';action.className='v37-primary';action.style.cssText='display:block;margin-top:8px;font-size:13px;';
+      action.onclick=()=>{banner.remove();switchTab('tab-analytics');};banner.appendChild(action);
+      const dismiss=document.createElement('button');dismiss.textContent='稍後';dismiss.style.cssText='margin-left:12px;text-decoration:underline';dismiss.onclick=()=>banner.remove();banner.appendChild(dismiss);
+      document.querySelector('main')?.prepend(banner);
+    }
+
+
+    function v37UndoLastImport(){
+      const rollback=localStorage.getItem(V37_ROLLBACK_KEY);
+      if(!rollback){showNotice('沒有找到上次匯入前的復原快照。');return;}
+      let previous;
+      try {previous=JSON.parse(rollback);}catch(e){showNotice('復原快照無法讀取。');return;}
+      const checked=v37CheckImportData(previous);
+      if(!checked.ok){showNotice('快照未通過檢查，未修改資料。');return;}
+      if(!confirm(`要復原上次匯入前的 ${checked.days} 天紀錄嗎？目前資料將改為復原快照。建議先匯出最新 JSON 備份。`))return;
+      const oldState=appState,oldRaw=localStorage.getItem(STORAGE_KEY);
+      try {
+        appState=previous;
+        appState.uiProfile={nickname:'',avatarDataUrl:'',onboardingCompleted:true,lastBackupAt:null,...(appState.uiProfile||{})};
+        appState.schemaVersion=2;
+        saveState();
+        if(oldRaw!==null)localStorage.setItem(V37_ROLLBACK_KEY,oldRaw);
+      } catch(e){
+        appState=oldState;
+        try {if(oldRaw!==null)localStorage.setItem(STORAGE_KEY,oldRaw);}catch(_){}
+        showNotice('復原失敗：儲存空間可能不足，原資料仍在。');return;
+      }
+      ensureDateLogExists(currentSelectedDate);
+      syncProfileInputs();initFoodPresetDropdown();initExercisePresetDropdown();renderAll();v37RefreshHeader();v37RefreshBackupStatus();
+      showNotice('已復原上次匯入前的紀錄。');
+    }
+
+    function v37ShowEstimationCaution(){
+      let e=document.getElementById('v37EstimateCaution');
+      if(!appState.uiProfile?.estimatedMissingMetrics){e?.remove();return;}
+      if(e)return;
+      e=document.createElement('p');e.id='v37EstimateCaution';
+      e.className='v37-note';
+      e.style.cssText='margin-bottom:12px;border-color:#fde68a;background:#fffbeb;color:#92400e';
+      e.textContent='初次設定尚未提供部分身體組成實測數字。畫面中的對應數值可能為系統預設試算值，請前往「截圖與目標」補上實際量測。';
+      const main=document.querySelector('main');if(main)main.prepend(e);
     }
   </script>
 
